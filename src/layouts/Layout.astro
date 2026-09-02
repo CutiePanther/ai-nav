@@ -1,0 +1,71 @@
+---
+import '../styles/global.css';
+import Search from '../components/Search.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+const siteName = 'AI 开发学习导航';
+
+const navLinks = [
+  { href: '/docs', label: '文档' },
+  { href: '/info', label: '资讯' },
+  { href: '/faq', label: '题库' },
+  { href: '/roadmap', label: '路线图' },
+];
+
+const path = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title} · {siteName}</title>
+    {description && <meta name="description" content={description} />}
+    <meta property="og:title" content={`${title} · ${siteName}`} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:type" content="website" />
+    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+  </head>
+  <body class="flex min-h-screen flex-col">
+    <header class="sticky top-0 z-30 border-b border-gray-200 bg-white/85 backdrop-blur">
+      <div class="mx-auto flex max-w-5xl items-center gap-4 px-4 py-3">
+        <a href="/" class="shrink-0 text-lg font-bold tracking-tight">
+          <span class="text-indigo-600">AI</span>开发学习导航
+        </a>
+        <nav class="hidden shrink-0 items-center gap-5 text-sm font-medium text-gray-600 sm:flex">
+          {navLinks.map((l) => (
+            <a
+              href={l.href}
+              class:list={[
+                'hover:text-indigo-600',
+                (path === l.href || path.startsWith(l.href + '/')) && 'text-indigo-600 font-semibold',
+              ]}
+            >
+              {l.label}
+            </a>
+          ))}
+        </nav>
+        <div class="ml-auto w-full max-w-xs">
+          <Search />
+        </div>
+      </div>
+    </header>
+
+    <main class="mx-auto w-full max-w-5xl flex-1 px-4 py-8" data-pagefind-body>
+      <slot />
+    </main>
+
+    <footer class="border-t border-gray-200 py-8 text-center text-sm text-gray-400">
+      AI 开发学习导航 · 聚合外链 + 精选内容，助你高效学习 AI
+    </footer>
+  </body>
+</html>

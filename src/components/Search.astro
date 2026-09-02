@@ -1,0 +1,67 @@
+---
+// 客户端搜索组件，基于 Pagefind（构建后自动索引）
+---
+
+<div id="search" class="relative">
+  <input
+    id="search-input"
+    type="search"
+    placeholder="搜索文档、资讯、题库…"
+    autocomplete="off"
+    class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+  />
+  <div id="search-results" class="absolute z-20 mt-2 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg"></div>
+</div>
+
+<script>
+  async function initSearch() {
+    const input = document.getElementById('search-input');
+    const results = document.getElementById('search-results');
+    if (!input || !results) return;
+
+    let pagefind = null;
+    try {
+      // 动态拼接路径，避免 Vite 构建期解析（pagefind 索引在 postbuild 生成）
+      pagefind = await import(/* @vite-ignore */ '/pagefind/pagefind.js');
+    } catch {
+      return; // 未构建索引（dev 环境）时静默
+    }
+
+    let debounce;
+    input.addEventListener('input', async () => {
+      clearTimeout(debounce);
+      const q = input.value.trim();
+      debounce = setTimeout(async () => {
+        if (!q) {
+          results.innerHTML = '';
+          results.classList.add('hidden');
+          return;
+        }
+        const search = await pagefind.search(q);
+        if (!search || search.results.length === 0) {
+          results.innerHTML = '<div class="px-4 py-3 text-sm text-gray-400">未找到相关结果</div>';
+          results.classList.remove('hidden');
+          return;
+        }
+        const items = await Promise.all(
+          search.results.slice(0, 8).map(async (r) => ({ r, data: await r.data() }))
+        );
+        results.innerHTML = items.map(({ r, data }) => `
+          <a href="${r.url}" class="block px-4 py-3 transition hover:bg-gray-50">
+            <p class="text-sm font-medium text-gray-800">${data.meta.title || '未命名'}</p>
+            ${data.excerpt ? `<p class="mt-0.5 text-xs text-gray-400 line-clamp-1">${data.excerpt}</p>` : ''}
+          </a>
+        `).join('');
+        results.classList.remove('hidden');
+      }, 200);
+    });
+
+    // 点击外部关闭
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#search')) {
+        results.classList.add('hidden');
+      }
+    });
+  }
+  initSearch();
+</script>

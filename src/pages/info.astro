@@ -1,0 +1,42 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const info = (await getCollection('info'))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+const categories = [...new Set(info.map((i) => i.data.category))];
+const categoryColor: Record<string, string> = {
+  行业快讯: 'bg-indigo-50 text-indigo-600',
+  技术前沿: 'bg-purple-50 text-purple-600',
+  开源动态: 'bg-emerald-50 text-emerald-600',
+  政策产业: 'bg-orange-50 text-orange-600',
+};
+---
+
+<Layout title="最新资讯" description="聚合 AI 行业快讯、技术前沿、开源动态、政策产业的资讯外链与摘要">
+  <h1 class="text-2xl font-bold">最新资讯</h1>
+  <p class="mt-2 text-gray-500">聚合外链 + 摘要，点击跳转原文。分类：{categories.join(' · ')}。</p>
+
+  <div class="mt-8 space-y-4">
+    {info.map((item) => (
+      <a
+        href={`/info/${item.id}/`}
+        class="block rounded-xl border border-gray-200 bg-white p-5 transition hover:border-indigo-300 hover:shadow"
+      >
+        <div class="flex items-center gap-2 text-xs">
+          <span class={`rounded px-2 py-0.5 ${categoryColor[item.data.category] ?? 'bg-gray-100 text-gray-600'}`}>
+            {item.data.category}
+          </span>
+          <span class="text-gray-400">{item.data.source}</span>
+          <span class="text-gray-400">·</span>
+          <time class="text-gray-400" datetime={item.data.date.toISOString()}>
+            {item.data.date.toLocaleDateString('zh-CN')}
+          </time>
+        </div>
+        <h2 class="mt-2 font-semibold leading-snug hover:text-indigo-600">{item.data.title}</h2>
+        <p class="mt-2 text-sm leading-relaxed text-gray-500">{item.data.summary}</p>
+      </a>
+    ))}
+  </div>
+</Layout>

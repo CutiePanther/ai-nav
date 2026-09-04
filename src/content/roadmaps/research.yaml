@@ -1,0 +1,134 @@
+title: 算法研究
+icon: flask-conical
+target: 想深入模型原理、读论文、做研究的同学
+duration: 约 4~6 个月
+prerequisites:
+  - 高等数学 / 线性代数 / 概率统计基础
+  - Python 编程
+  - 基本机器学习概念
+stages:
+  - name: 筑基：数学与机器学习基础
+    desc: 夯实线性代数、概率统计、优化理论与经典 ML 算法
+    time: 3~4 周
+    skills:
+      - 线性代数
+      - 概率统计
+      - 梯度优化
+      - 经典 ML
+    tasks:
+      - 从零实现并推导线性回归、逻辑回归的梯度下降
+      - 用 sklearn 跑通分类 / 回归 / 聚类等经典算法
+      - 理解 bias-variance 权衡与交叉验证
+      - 手推反向传播的前向 / 后向过程
+    checkpoint: 能手推并实现线性回归、逻辑回归，说清过拟合的本质
+    project: 用经典 ML 做一个 Kaggle 入门赛
+    resources:
+      - label: 吴恩达机器学习
+        url: https://www.coursera.org/learn/machine-learning
+        kind: course
+      - label: Kaggle Learn
+        url: https://www.kaggle.com/learn
+        kind: course
+      - label: 3Blue1Brown 数学
+        url: https://www.3blue1brown.com/
+        kind: course
+  - name: 核心：深度学习与 Transformer
+    desc: 掌握神经网络、反向传播、Transformer 架构与训练技巧
+    time: 4~5 周
+    skills:
+      - 反向传播
+      - Transformer
+      - 注意力机制
+      - 训练技巧
+    tasks:
+      - 用 PyTorch 从零搭建 MLP、CNN 并训练
+      - 精读《Attention is All You Need》论文
+      - 手写一个 mini Transformer（对照 Happy-LLM）
+      - 理解位置编码、多头注意力、残差 + LayerNorm
+    checkpoint: 能从零实现一个小 Transformer 并完成训练
+    project: 复现 nanoGPT / Happy-LLM 的 mini 模型
+    resources:
+      - label: PyTorch 文档
+        url: https://pytorch.org/docs
+        kind: doc
+      - label: 图解 Transformer
+        url: https://jalammar.github.io/illustrated-transformer/
+        kind: doc
+      - label: Happy-LLM（手写 LLaMA2）
+        url: https://github.com/datawhalechina/happy-llm
+        kind: repo
+  - name: 进阶：LLM 预训练与微调
+    desc: 理解预训练目标、Scaling Law，实践 LoRA/全参微调
+    time: 4~5 周
+    skills:
+      - 预训练
+      - LoRA/QLoRA
+      - Scaling Law
+      - 分布式训练
+    tasks:
+      - 理解预训练目标（自回归 vs 掩码语言模型）
+      - 用 LLaMA-Factory 跑一次 LoRA 微调
+      - 理解 Scaling Law 与算力 / 数据 / 参数的权衡
+      - 跑一次多卡数据并行（DDP）训练
+    checkpoint: 能用 LoRA 微调一个模型并完成评测
+    project: 微调一个领域问答模型（如法律 / 医疗小模型）
+    resources:
+      - label: LLaMA-Factory
+        url: https://github.com/hiyouga/LLaMA-Factory
+        kind: repo
+      - label: llm-course
+        url: https://github.com/mlabonne/llm-course
+        kind: repo
+      - label: Scaling Laws 论文
+        url: https://arxiv.org/abs/2001.08361
+        kind: doc
+  - name: 实战：对齐与偏好优化
+    desc: 实践 SFT、RLHF、DPO 等对齐技术，让模型更符合人类偏好
+    time: 3~4 周
+    skills:
+      - SFT
+      - RLHF
+      - DPO
+      - 奖励建模
+    tasks:
+      - 跑通一次 SFT（监督微调）
+      - 理解 RLHF 三阶段：SFT → 奖励模型 → PPO
+      - 用 TRL 实现 DPO 训练
+      - 对比 DPO 与 PPO 的效果与成本
+    checkpoint: 能说清 SFT / RLHF / DPO 的区别并实现 DPO
+    project: 用 DPO 对齐一个模型，让它回答更符合偏好
+    resources:
+      - label: InstructGPT 论文
+        url: https://arxiv.org/abs/2203.02155
+        kind: doc
+      - label: DPO 论文
+        url: https://arxiv.org/abs/2305.18290
+        kind: doc
+      - label: TRL 对齐库
+        url: https://huggingface.co/docs/trl
+        kind: doc
+  - name: 前沿：论文与顶会
+    desc: 追踪 NeurIPS/ICML/ACL/ICLR，复现前沿工作、产出研究
+    time: 持续
+    skills:
+      - 论文精读
+      - 实验复现
+      - 学术写作
+      - 开源贡献
+    tasks:
+      - 每月精读 1 篇顶会论文并写笔记
+      - 复现 1 个论文实验（如 DPO、LoRA）
+      - 写技术博客输出理解
+      - 向开源项目提交 PR
+    checkpoint: 能读懂并复现前沿工作，产出自己的研究
+    project: 复现一篇论文 + 写一篇技术博客
+    resources:
+      - label: arXiv
+        url: https://arxiv.org
+        kind: doc
+      - label: HuggingFace Papers
+        url: https://huggingface.co/papers
+        kind: doc
+      - label: so-large-lm
+        url: https://github.com/datawhalechina/so-large-lm
+        kind: repo

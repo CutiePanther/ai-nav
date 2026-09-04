@@ -12,14 +12,13 @@
 //     没有 Astro 的 data-astro-cid 属性，scoped CSS 无法匹配。global + 前缀
 //     让所有选择器能跨模板/动态 DOM 匹配，同时不污染其他组件。
 import { getCollection } from 'astro:content';
-import { roadmaps } from '../data/roadmaps';
 
 interface Props {
   mode?: 'floating' | 'inline';
 }
 const { mode = 'floating' } = Astro.props;
 const faqCount = (await getCollection('faq')).length;
-const roadmapCount = roadmaps.length;
+const roadmapCount = (await getCollection('roadmaps')).length;
 ---
 
 <div id="chat-root" class="chat-widget" data-mode={mode} data-faq-count={faqCount} data-roadmap-count={roadmapCount}>

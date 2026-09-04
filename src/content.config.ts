@@ -30,12 +30,28 @@ const info = defineCollection({
   }),
 });
 
+// AI 工具大全（按分类导航）
+const tools = defineCollection({
+  loader: glob({ base: './src/content/tools', pattern: '**/*.md' }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),          // 一句话简介
+    url: z.string().url(),            // 外链
+    category: z.enum([
+      'AI写作', 'AI图像', 'AI视频', 'AI办公', 'AI开发平台', 'AI智能体',
+      'AI聊天', 'AI音频', 'AI大模型', 'AI学习平台', 'AI搜索引擎', 'AI编程',
+    ]),
+    free: z.enum(['免费', '付费', '免费增值']).default('免费'),
+    tags: z.array(z.string()).default([]),
+  }),
+});
+
 // 精选面试题（精选集，外链 + 高频清单）
 const faq = defineCollection({
   loader: glob({ base: './src/content/faq', pattern: '**/*.md' }),
   schema: z.object({
     title: z.string(),
-    category: z.enum(['大模型', '机器学习', '深度学习', '工程系统']),
+    category: z.enum(['大模型', '机器学习', '深度学习', '工程系统', 'AI八股文', '计算机基础']),
     difficulty: z.enum(['入门', '进阶', '高级']),
     answer: z.string(),               // 题目答案/要点（原创摘要）
     refs: z.array(z.object({
@@ -46,4 +62,30 @@ const faq = defineCollection({
   }),
 });
 
-export const collections = { docs, info, faq };
+// 学习路线图（按方向分路线，每条路线分阶段；运营加路线只需加 YAML 文件）
+const roadmaps = defineCollection({
+  loader: glob({ base: './src/content/roadmaps', pattern: '**/*.yaml' }),
+  schema: z.object({
+    title: z.string(),
+    icon: z.string(),
+    target: z.string(),               // 目标人群
+    duration: z.string(),             // 总周期
+    prerequisites: z.array(z.string()),
+    stages: z.array(z.object({
+      name: z.string(),
+      desc: z.string(),
+      time: z.string(),               // 预计用时
+      skills: z.array(z.string()),
+      tasks: z.array(z.string()),
+      checkpoint: z.string(),         // 检验标准
+      project: z.string().optional(), // 实践项目建议
+      resources: z.array(z.object({
+        label: z.string(),
+        url: z.string().url(),
+        kind: z.enum(['course', 'repo', 'doc', 'practice']).optional(),
+      })),
+    })),
+  }),
+});
+
+export const collections = { docs, info, tools, faq, roadmaps };

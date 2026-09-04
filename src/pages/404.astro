@@ -1,6 +1,8 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { roadmaps } from '../data/roadmaps';
+import { getCollection } from 'astro:content';
+
+const roadmapCount = (await getCollection('roadmaps')).length;
 
 const links = [
   { href: '/', label: '首页' },
@@ -34,7 +36,7 @@ const links = [
     <div class="mt-12 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 text-left">
       <p class="text-sm font-semibold text-slate-200">不知道从哪开始？</p>
       <p class="mt-2 text-sm leading-relaxed text-slate-400">
-        试试从「学习路线」入手——按方向分 {roadmaps.length} 条路径，每条带阶段任务与检验标准，拿到就能照着学。
+        试试从「学习路线」入手——按方向分 {roadmapCount} 条路径，每条带阶段任务与检验标准，拿到就能照着学。
       </p>
       <a href="/roadmap" class="mt-3 inline-flex text-sm font-medium text-indigo-300 transition hover:text-indigo-200">
         查看学习路线 →

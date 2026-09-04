@@ -1,70 +1,400 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
-import { roadmaps } from '../data/roadmaps';
 
 const docs = await getCollection('docs');
+const tools = await getCollection('tools');
 const info = (await getCollection('info'))
   .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
-  .slice(0, 5);
+  .slice(0, 6);
 const faq = await getCollection('faq');
+const roadmaps = await getCollection('roadmaps');
 
-// 文档按分类统计
-const docCategories = [...new Set(docs.map((d) => d.data.category))];
-const infoCategories = [...new Set(info.map((i) => i.data.category))];
+// 精选推荐
+const featuredToolSlugs = ['cursor', 'chatgpt', 'midjourney', 'deepseek', 'coze', 'kimi'];
+const featuredTools = featuredToolSlugs
+  .map((slug) => tools.find((t) => t.id === slug))
+  .filter(Boolean);
+
+const featuredFaqSlugs = ['what-is-rag', 'what-is-agent', 'lora', 'transformer-attention', 'rlhf', 'llm-hallucination'];
+const featuredFaq = featuredFaqSlugs
+  .map((slug) => faq.find((f) => f.id === slug))
+  .filter(Boolean);
+
+// 统计
+const stats = [
+  { num: docs.length, label: '文档条目' },
+  { num: tools.length, label: 'AI 工具' },
+  { num: info.length, label: '资讯' },
+  { num: faq.length, label: '面试题' },
+  { num: roadmaps.length, label: '学习路线' },
+];
+
+// 文档分类统计（Bento 预览）
+const docsByCategory = Object.entries(
+  docs.reduce<Record<string, number>>((acc, d) => {
+    acc[d.data.category] = (acc[d.data.category] || 0) + 1;
+    return acc;
+  }, {})
+).sort((a, b) => b[1] - a[1]);
+
+// 题库难度分布（Bento 预览）
+const faqDiff = { 入门: 0, 进阶: 0, 高级: 0 };
+faq.forEach((f) => {
+  const d = f.data.difficulty;
+  if (d === '入门' || d === '进阶' || d === '高级') faqDiff[d]++;
+});
+const faqTotal = faq.length || 1;
+
+// 工具预览名
+const toolPreviewNames = featuredTools.slice(0, 4).map((t: any) => t.data.title);
+
+// 资讯预览标题
+const infoPreview = info.slice(0, 2);
+
+// 栏目数据
+const columns = [
+  {
+    href: '/docs',
+    title: '官方文档',
+    desc: '大模型 API、框架、推理部署、向量库——按分类聚合，快速定位官方资料。',
+    count: `${docs.length} 个条目`,
+    grad: 'from-cyan-400 to-indigo-500',
+    span: 'lg:col-span-4 lg:row-span-2',
+    previewType: 'docs',
+  },
+  {
+    href: '/tools',
+    title: 'AI 工具大全',
+    desc: '编程、开发平台、智能体、聊天、大模型。',
+    count: `${tools.length} 个工具`,
+    grad: 'from-amber-400 to-orange-500',
+    span: 'lg:col-span-2',
+    previewType: 'tools',
+  },
+  {
+    href: '/info',
+    title: '最新资讯',
+    desc: '行业快讯、技术前沿、开源动态。',
+    count: `${info.length} 条 · 持续更新`,
+    grad: 'from-sky-400 to-indigo-500',
+    span: 'lg:col-span-2',
+    previewType: 'info',
+  },
+  {
+    href: '/faq',
+    title: '精选面试题',
+    desc: '大模型、机器学习、深度学习、AI 八股文。',
+    count: `${faq.length} 道题目`,
+    grad: 'from-violet-400 to-fuchsia-500',
+    span: 'lg:col-span-3',
+    previewType: 'faq',
+  },
+  {
+    href: '/roadmap',
+    title: '学习路线图',
+    desc: '应用开发、算法研究、工程化、多模态、产品商业化。',
+    count: `${roadmaps.length} 条路线`,
+    grad: 'from-emerald-400 to-sky-500',
+    span: 'lg:col-span-3',
+    previewType: 'roadmap',
+  },
+];
+
+const roadmapGrads: Record<string, string> = {
+  app: 'linear-gradient(135deg,#22d3ee,#6366f1)',
+  research: 'linear-gradient(135deg,#10b981,#0ea5e9)',
+  engineering: 'linear-gradient(135deg,#f59e0b,#f97316)',
+  multimodal: 'linear-gradient(135deg,#8b5cf6,#ec4899)',
+  product: 'linear-gradient(135deg,#22c55e,#10b981)',
+};
+
+const freeColor: Record<string, string> = {
+  免费: 'bg-emerald-500/15 text-emerald-300',
+  付费: 'bg-rose-500/15 text-rose-300',
+  免费增值: 'bg-amber-500/15 text-amber-300',
+};
+const diffColor: Record<string, string> = {
+  入门: 'bg-emerald-500/15 text-emerald-300',
+  进阶: 'bg-amber-500/15 text-amber-300',
+  高级: 'bg-rose-500/15 text-rose-300',
+};
 ---
 
-<Layout title="首页" description="AI 开发者的学习导航 + 内容聚合 + 精选题库 + 学习路线一站式入口">
-  <section class="mb-10 text-center">
-    <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">
-      追资讯 · 查文档 · 刷题库 · 跟路线
-    </h1>
-    <p class="mt-3 text-gray-500">
-      AI 开发者的一站式学习导航站，聚合散落各处的优质资源，结构清晰、可检索。
-    </p>
-  </section>
+<Layout title="首页" description="AI 开发者的一站式学习导航站：聚合文档、工具、资讯、题库与学习路线，从入门到进阶的完整路径">
+  <!-- ============ Hero 区（带生成背景图） ============ -->
+  <section class="hero-bg card-glow relative overflow-hidden rounded-3xl border border-white/[0.08]">
+    <div class="relative px-6 py-20 sm:px-10 sm:py-28">
+      <div class="relative mx-auto max-w-3xl text-center">
+        <span class="inline-flex items-center gap-1.5 rounded-full border border-white/[0.12] bg-black/20 px-3 py-1 text-xs font-medium text-slate-200 backdrop-blur-sm">
+          <span class="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.9)]"></span>
+          AI 开发者的聚合学习导航
+        </span>
 
-  <!-- 四大栏目入口 -->
-  <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-    <a href="/docs" class="group rounded-xl border border-gray-200 bg-white p-6 transition hover:border-indigo-300 hover:shadow">
-      <div class="text-2xl">📚</div>
-      <h2 class="mt-3 text-lg font-semibold group-hover:text-indigo-600">官方文档</h2>
-      <p class="mt-1 text-sm text-gray-500">大模型 API · 框架 · 推理部署 · 向量库导航库</p>
-      <p class="mt-3 text-sm text-indigo-600">{docs.length} 个文档条目 · {docCategories.length} 个分类</p>
-    </a>
-    <a href="/info" class="group rounded-xl border border-gray-200 bg-white p-6 transition hover:border-indigo-300 hover:shadow">
-      <div class="text-2xl">📰</div>
-      <h2 class="mt-3 text-lg font-semibold group-hover:text-indigo-600">最新资讯</h2>
-      <p class="mt-1 text-sm text-gray-500">行业快讯 · 技术前沿 · 开源动态 · 政策产业</p>
-      <p class="mt-3 text-sm text-indigo-600">聚合外链 + 摘要，持续更新</p>
-    </a>
-    <a href="/faq" class="group rounded-xl border border-gray-200 bg-white p-6 transition hover:border-indigo-300 hover:shadow">
-      <div class="text-2xl">🧠</div>
-      <h2 class="mt-3 text-lg font-semibold group-hover:text-indigo-600">精选面试题</h2>
-      <p class="mt-1 text-sm text-gray-500">大模型 · ML · DL · 工程高频题精选集</p>
-      <p class="mt-3 text-sm text-indigo-600">{faq.length} 道精选题目</p>
-    </a>
-    <a href="/roadmap" class="group rounded-xl border border-gray-200 bg-white p-6 transition hover:border-indigo-300 hover:shadow">
-      <div class="text-2xl">🗺️</div>
-      <h2 class="mt-3 text-lg font-semibold group-hover:text-indigo-600">学习路线图</h2>
-      <p class="mt-1 text-sm text-gray-500">应用开发 · 算法研究 · 工程化 · 多模态</p>
-      <p class="mt-3 text-sm text-indigo-600">{roadmaps.length} 条路线 · 分阶段进阶</p>
-    </a>
-  </section>
+        <h1 class="mx-auto mt-6 max-w-3xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-6xl">
+          从入门到进阶的<br />
+          <span class="text-grad">AI 开发学习路径</span>
+        </h1>
 
-  <!-- 最新资讯 -->
-  <section class="mt-12">
-    <div class="mb-4 flex items-center justify-between">
-      <h2 class="text-xl font-semibold">最新资讯</h2>
-      <a href="/info" class="text-sm text-indigo-600 hover:underline">查看全部 →</a>
+        <p class="mx-auto mt-5 max-w-2xl text-base text-slate-300 sm:text-lg">
+          聚合散落各处的优质资源——文档、工具、资讯、题库、学习路线，结构清晰、可检索、持续更新。不用再到处收藏，一个站搞定。
+        </p>
+
+        <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <a href="/ai" class="bg-grad rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:opacity-90">
+            问 AI 助手 ✨
+          </a>
+          <a href="#explore" class="rounded-xl border border-white/[0.14] bg-white/[0.06] px-6 py-3 text-sm font-semibold text-slate-100 backdrop-blur-sm transition hover:border-indigo-400/40 hover:text-indigo-200">
+            开始探索 →
+          </a>
+          <a href="/roadmap" class="rounded-xl border border-white/[0.14] bg-white/[0.06] px-6 py-3 text-sm font-semibold text-slate-100 backdrop-blur-sm transition hover:border-indigo-400/40 hover:text-indigo-200">
+            查看学习路线
+          </a>
+        </div>
+
+        <div class="mx-auto mt-10 flex max-w-2xl flex-wrap items-center justify-center gap-x-8 gap-y-3">
+          {stats.map((s) => (
+            <div class="flex items-baseline gap-1.5">
+              <span class="text-2xl font-bold tabular-nums text-white">{s.num}</span>
+              <span class="text-sm text-slate-300">{s.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
-    <div class="divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white">
-      {info.map((item) => (
-        <a href={item.data.url} target="_blank" rel="noopener" class="flex items-start gap-3 px-5 py-4 transition hover:bg-gray-50">
-          <span class="mt-1 shrink-0 rounded bg-indigo-50 px-2 py-0.5 text-xs text-indigo-600">{item.data.category}</span>
-          <div>
-            <p class="font-medium leading-snug hover:text-indigo-600">{item.data.title}</p>
-            <p class="mt-1 text-sm text-gray-500">{item.data.source} · {item.data.date.toLocaleDateString('zh-CN')}</p>
+  </section>
+
+  <!-- ============ 栏目入口（Bento 网格） ============ -->
+  <section id="explore" class="mt-16 scroll-mt-24">
+    <div class="mb-8 flex items-end justify-between">
+      <div>
+        <h2 class="section-title text-2xl font-bold">开始探索</h2>
+        <p class="mt-4 max-w-xl text-slate-400">五个栏目，覆盖 AI 开发学习的完整闭环</p>
+      </div>
+      <span class="hidden text-sm text-slate-500 sm:block">按你的需求点进去即可</span>
+    </div>
+
+    <div class="grid auto-rows-fr grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6">
+      {columns.map((c) => (
+        <a
+          href={c.href}
+          class:list={[
+            'card-lift card-glow accent-top group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 backdrop-blur-sm',
+            c.span,
+          ]}
+        >
+          <!-- 顶部渐变胶囊 -->
+          <span class={`inline-flex w-fit rounded-full bg-gradient-to-r ${c.grad} px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-md`}>
+            {c.count}
+          </span>
+
+          <h3 class="relative z-10 mt-4 text-lg font-semibold text-slate-100 transition group-hover:text-indigo-300">
+            {c.title}
+          </h3>
+          <p class="relative z-10 mt-1 text-sm leading-relaxed text-slate-400">{c.desc}</p>
+
+          <!-- 内容化预览（替代图标） -->
+          <div class="relative z-10 mt-auto pt-5">
+            {c.previewType === 'docs' && (
+              <div class="space-y-3">
+                <div class="flex flex-wrap gap-2">
+                  {docsByCategory.slice(0, 5).map(([cat, count]) => (
+                    <span class="rounded-lg bg-white/[0.05] px-2 py-1 text-xs text-slate-400 ring-1 ring-white/[0.06]">
+                      {cat} <span class="text-indigo-300">{count}</span>
+                    </span>
+                  ))}
+                </div>
+                <span class="inline-flex items-center text-xs font-medium text-indigo-300 transition group-hover:translate-x-0.5">
+                  浏览全部文档 →
+                </span>
+              </div>
+            )}
+
+            {c.previewType === 'tools' && (
+              <div class="space-y-3">
+                <div class="flex flex-wrap gap-2">
+                  {toolPreviewNames.map((name) => (
+                    <span class="rounded-lg bg-white/[0.05] px-2 py-1 text-xs text-slate-300 ring-1 ring-white/[0.06]">{name}</span>
+                  ))}
+                </div>
+                <span class="inline-flex items-center text-xs font-medium text-indigo-300">查看工具大全 →</span>
+              </div>
+            )}
+
+            {c.previewType === 'info' && (
+              <div class="space-y-2">
+                {infoPreview.map((item) => (
+                  <p class="truncate text-xs text-slate-400">
+                    <span class="text-indigo-300">·</span> {item.data.title}
+                  </p>
+                ))}
+                <span class="inline-flex items-center text-xs font-medium text-indigo-300">阅读最新资讯 →</span>
+              </div>
+            )}
+
+            {c.previewType === 'faq' && (
+              <div class="space-y-3">
+                <div class="flex items-center gap-3 text-xs text-slate-400">
+                  <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>入门 {Math.round((faqDiff['入门'] / faqTotal) * 100)}%</span>
+                  <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>进阶 {Math.round((faqDiff['进阶'] / faqTotal) * 100)}%</span>
+                  <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-rose-400"></span>高级 {Math.round((faqDiff['高级'] / faqTotal) * 100)}%</span>
+                </div>
+                <div class="diff-mini">
+                  <span class="bg-emerald-400" style={`width:${(faqDiff['入门'] / faqTotal) * 100}%`}></span>
+                  <span class="bg-amber-400" style={`width:${(faqDiff['进阶'] / faqTotal) * 100}%`}></span>
+                  <span class="bg-rose-400" style={`width:${(faqDiff['高级'] / faqTotal) * 100}%`}></span>
+                </div>
+                <span class="inline-flex items-center text-xs font-medium text-indigo-300">去刷题 →</span>
+              </div>
+            )}
+
+            {c.previewType === 'roadmap' && (
+              <div class="space-y-3">
+                <div class="stage-progress max-w-[14rem]">
+                  {roadmaps.map((r, i) => (
+                    <>
+                      <span class="dot active" style={`box-shadow: 0 0 8px ${roadmapGrads[r.id].includes('f59e0b') ? 'rgba(245,158,11,0.55)' : 'rgba(34,211,238,0.55)'}`}></span>
+                      {i < roadmaps.length - 1 && <span class="bar active"></span>}
+                    </>
+                  ))}
+                </div>
+                <span class="inline-flex items-center text-xs font-medium text-indigo-300">选择路线开始学习 →</span>
+              </div>
+            )}
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- ============ 学习路线速览 ============ -->
+  <section class="mt-16">
+    <div class="mb-7 flex items-center justify-between">
+      <h2 class="section-title text-2xl font-bold">学习路线速览</h2>
+      <a href="/roadmap" class="text-sm font-medium text-indigo-300 transition hover:text-indigo-200">全部路线 →</a>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {roadmaps.map((r) => (
+        <a
+          href={`/roadmap/${r.id}`}
+          class="card-lift card-glow accent-top group flex flex-col rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 backdrop-blur-sm"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <h3 class="font-semibold text-slate-100 transition group-hover:text-indigo-300">{r.data.title}</h3>
+            <span class="shrink-0 rounded-full bg-white/[0.06] px-2.5 py-1 text-xs text-slate-400">{r.data.duration}</span>
+          </div>
+          <p class="mt-2 line-clamp-2 text-sm text-slate-400">{r.data.target}</p>
+
+          <div class="mt-4 flex items-center gap-1.5">
+            {r.data.stages.map((_, idx) => (
+              <>
+                <span class="h-2 w-2 rounded-full" style={`background:${roadmapGrads[r.id]}`}></span>
+                {idx < r.data.stages.length - 1 && <span class="h-0.5 w-3 rounded-full bg-white/10"></span>}
+              </>
+            ))}
+          </div>
+          <p class="mt-3 text-xs text-slate-500">{r.data.stages.length} 阶段 · {r.data.stages.reduce((n, s) => n + s.tasks.length, 0)} 个任务</p>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- ============ 精选工具 ============ -->
+  {featuredTools.length > 0 && (
+    <section class="mt-16">
+      <div class="mb-7 flex items-center justify-between">
+        <h2 class="section-title text-2xl font-bold">精选工具</h2>
+        <a href="/tools" class="text-sm font-medium text-indigo-300 transition hover:text-indigo-200">工具大全 →</a>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {featuredTools.map((t) => (
+          <a
+            href={t.data.url}
+            target="_blank"
+            rel="noopener"
+            class="card-lift card-glow group flex flex-col rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 backdrop-blur-sm"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="font-semibold text-slate-100 transition group-hover:text-indigo-300">{t.data.title}</h3>
+              <span class={`shrink-0 rounded-md px-2 py-0.5 text-xs font-medium ${freeColor[t.data.free] ?? 'bg-white/[0.06] text-slate-400'}`}>{t.data.free}</span>
+            </div>
+            <p class="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-slate-400">{t.data.description}</p>
+            <div class="mt-3 flex items-center justify-between">
+              <span class="rounded bg-indigo-500/15 px-2 py-0.5 text-xs font-medium text-indigo-300">{t.data.category}</span>
+              <span class="text-xs font-medium text-indigo-300 opacity-0 transition group-hover:opacity-100">访问 ↗</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- ============ 高频面试题 ============ -->
+  {featuredFaq.length > 0 && (
+    <section class="mt-16">
+      <div class="mb-7 flex items-center justify-between">
+        <h2 class="section-title text-2xl font-bold">高频面试题</h2>
+        <a href="/faq" class="text-sm font-medium text-indigo-300 transition hover:text-indigo-200">题库大全 →</a>
+      </div>
+      <div class="grid gap-3 md:grid-cols-2">
+        {featuredFaq.map((q) => (
+          <a
+            href={`/faq/${q.id}/`}
+            class="card-lift card-glow group flex flex-col rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 backdrop-blur-sm"
+          >
+            <div class="flex items-start gap-2.5">
+              <span class={`mt-0.5 shrink-0 rounded-md px-2 py-0.5 text-xs font-medium ${diffColor[q.data.difficulty] ?? 'bg-white/[0.06] text-slate-400'}`}>
+                {q.data.difficulty}
+              </span>
+              <h3 class="font-semibold leading-snug text-slate-100 transition group-hover:text-indigo-300">{q.data.title}</h3>
+            </div>
+            <p class="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-slate-400">{q.data.answer}</p>
+            <div class="mt-3 flex items-center justify-between">
+              <span class="rounded bg-white/[0.06] px-2 py-0.5 text-xs text-slate-400">{q.data.category}</span>
+              <span class="text-xs font-medium text-indigo-300 opacity-0 transition group-hover:opacity-100">查看详解 →</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- ============ 如何使用本站 ============ -->
+  <section class="mt-16">
+    <div class="mb-7 text-center">
+      <h2 class="section-title mx-auto inline-block text-2xl font-bold">如何使用本站</h2>
+      <p class="mx-auto mt-4 max-w-xl text-slate-400">三步把本站变成你的 AI 学习加速器</p>
+    </div>
+    <div class="grid gap-4 md:grid-cols-3">
+      {[
+        { title: '查文档 · 找工具', desc: '需要什么就搜什么，官方文档与 AI 工具按分类聚合，点开即用。' },
+        { title: '追资讯 · 学知识', desc: '每天看看最新行业动态与技术前沿，保持信息不落后。' },
+        { title: '刷题库 · 跟路线', desc: '对照学习路线图按阶段推进，用面试题检验掌握程度。' },
+      ].map((s) => (
+        <div class="card-glow accent-top rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 text-center">
+          <h3 class="font-semibold text-slate-100">{s.title}</h3>
+          <p class="mt-2 text-sm leading-relaxed text-slate-400">{s.desc}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- ============ 最新资讯 ============ -->
+  <section class="mt-16">
+    <div class="mb-5 flex items-center justify-between">
+      <h2 class="section-title text-2xl font-bold">最新资讯</h2>
+      <a href="/info" class="text-sm font-medium text-indigo-300 transition hover:text-indigo-200">查看全部 →</a>
+    </div>
+    <div class="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm">
+      {info.map((item, i) => (
+        <a
+          href={`/info/${item.id}/`}
+          class:list={['flex items-start gap-3 px-5 py-4 transition hover:bg-indigo-500/[0.08]', i !== 0 && 'border-t border-white/[0.06]']}
+        >
+          <span class="mt-0.5 shrink-0 rounded-md bg-indigo-500/15 px-2 py-0.5 text-xs font-medium text-indigo-300">{item.data.category}</span>
+          <div class="min-w-0">
+            <p class="font-medium leading-snug text-slate-200 transition hover:text-indigo-300">{item.data.title}</p>
+            <p class="mt-1 text-sm text-slate-500">{item.data.source} · {item.data.date.toLocaleDateString('zh-CN')}</p>
           </div>
         </a>
       ))}

@@ -1,34 +1,113 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { roadmaps } from '../data/roadmaps';
+import { getCollection } from 'astro:content';
+
+const roadmaps = await getCollection('roadmaps');
+
+const grads: Record<string, string> = {
+  app: 'linear-gradient(135deg,#22d3ee,#6366f1)',
+  research: 'linear-gradient(135deg,#10b981,#0ea5e9)',
+  engineering: 'linear-gradient(135deg,#f59e0b,#f97316)',
+  multimodal: 'linear-gradient(135deg,#8b5cf6,#ec4899)',
+  product: 'linear-gradient(135deg,#22c55e,#10b981)',
+};
+
+const totalStages = roadmaps.reduce((n, r) => n + r.data.stages.length, 0);
+const totalTasks = roadmaps.reduce((n, r) => n + r.data.stages.reduce((m, s) => m + s.tasks.length, 0), 0);
+
+const tips = [
+  { t: '按顺序学，别跳阶段', d: '每阶段以前一阶段为前提。先吃透基础，再进核心，贪多求快只会返工。' },
+  { t: '项目不是可选项', d: '每个阶段都配了实践项目。看视频 ≠ 学会，动手写代码才是真正的学习。' },
+  { t: '通过「检验标准」再前进', d: '每阶段末尾有 checkpoint，诚实自检：达不到就回去补，别硬往下走。' },
+  { t: '30% 上课，70% 写代码', d: '把主要时间花在动手上。读别人的代码、复现、重建，是提升最快的路径。' },
+];
 ---
 
-<Layout title="学习路线图" description="按方向分路线的大模型应用、算法研究、AI 工程化、多模态学习路线图">
-  <h1 class="text-2xl font-bold">学习路线图</h1>
-  <p class="mt-2 text-gray-500">
-    按方向规划「筑基 → 核心 → 实战 → 前沿」的进阶路线，每条路线附带分阶段配套资源。
-  </p>
+<Layout title="学习路线图" description="可执行的大模型应用、算法研究、AI 工程化、多模态学习路线图：每阶段带具体任务、检验标准与实践项目">
+  <header class="mb-8">
+    <h1 class="text-3xl font-bold sm:text-4xl">学习路线图</h1>
+    <p class="mt-3 max-w-2xl text-slate-400">
+      按 {roadmaps.length} 个方向规划「筑基 → 核心 → 实战 → 进阶 → 前沿」的进阶路线。每条路线、每个阶段都拆解成
+      <span class="text-indigo-300">具体任务 + 检验标准 + 实践项目</span>，让你拿到就能照着学。
+    </p>
+  </header>
 
-  <div class="mt-8 grid gap-4 sm:grid-cols-2">
+  <!-- 如何使用 -->
+  <section class="card-glow mb-10 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 sm:p-8">
+    <h2 class="text-lg font-bold text-slate-100">如何使用这些路线图</h2>
+    <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {tips.map((c) => (
+        <div class="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+          <div class="flex items-start gap-2.5">
+            <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400"></span>
+            <div>
+              <p class="font-semibold text-slate-200">{c.t}</p>
+              <p class="mt-1 text-sm leading-relaxed text-slate-400">{c.d}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+    <p class="mt-5 border-t border-white/[0.06] pt-4 text-sm text-slate-500">
+      共 {roadmaps.length} 条路线 · {totalStages} 个阶段 · {totalTasks} 个学习任务，每条路线都标注了先修要求与预计周期。
+    </p>
+  </section>
+
+  <!-- 路线卡片：编辑风 + 阶段进度可视化 -->
+  <div class="grid gap-4 sm:grid-cols-2">
     {roadmaps.map((r) => (
       <a
-        href={`/roadmap/${r.slug}`}
-        class="group rounded-xl border border-gray-200 bg-white p-6 transition hover:border-indigo-300 hover:shadow"
+        href={`/roadmap/${r.id}`}
+        class="card-lift card-glow accent-top group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 backdrop-blur-sm"
       >
-        <div class="flex items-center gap-3">
-          <span class="text-3xl">{r.icon}</span>
-          <h2 class="text-lg font-semibold group-hover:text-indigo-600">{r.title}</h2>
+        <div class="relative z-10 flex items-start justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-bold text-slate-100 transition group-hover:text-indigo-300">{r.data.title}</h2>
+            <p class="mt-1 text-sm font-medium" style={`color:${grads[r.id].includes('f59e0b') ? '#fbbf24' : '#818cf8'}`}>{r.data.duration}</p>
+          </div>
+          <span class="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-xs text-slate-400">
+            {r.data.stages.length} 阶段
+          </span>
         </div>
-        <p class="mt-3 text-sm text-gray-500">{r.target}</p>
-        <div class="mt-4 flex items-center justify-between">
-          <span class="text-sm text-indigo-600">{r.duration}</span>
-          <span class="text-xs text-gray-400">{r.stages.length} 个阶段 →</span>
-        </div>
-        <!-- 阶段预览 -->
-        <div class="mt-4 flex flex-wrap gap-1.5">
-          {r.stages.map((s) => (
-            <span class="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600">{s.name}</span>
+
+        <p class="relative z-10 mt-3 text-sm leading-relaxed text-slate-400">{r.data.target}</p>
+
+        <!-- 先修要求 -->
+        {r.data.prerequisites.length > 0 && (
+          <div class="relative z-10 mt-3 flex flex-wrap gap-1.5">
+            {r.data.prerequisites.map((p) => (
+              <span class="rounded-full bg-white/[0.06] px-2.5 py-1 text-xs text-slate-500">{p}</span>
+            ))}
+          </div>
+        )}
+
+        <!-- 阶段进度可视化 -->
+        <div class="relative z-10 mt-5 flex items-center gap-1.5">
+          {r.data.stages.map((_, idx) => (
+            <>
+              <span
+                class="h-2 w-2 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.25)]"
+                style={`background:${grads[r.id]}`}
+              ></span>
+              {idx < r.data.stages.length - 1 && <span class="h-0.5 flex-1 rounded-full bg-white/10"></span>}
+            </>
           ))}
+        </div>
+
+        <!-- 阶段名 chips -->
+        <div class="relative z-10 mt-4 flex flex-wrap gap-1.5">
+          {r.data.stages.map((s) => (
+            <span class="rounded-lg bg-white/[0.05] px-2 py-1 text-xs text-slate-400 ring-1 ring-white/[0.06]">
+              {s.name.split('：')[1] ?? s.name}
+            </span>
+          ))}
+        </div>
+
+        <div class="relative z-10 mt-5 flex items-center justify-between border-t border-white/[0.06] pt-3 text-sm">
+          <span class="text-slate-500">
+            {r.data.stages.length} 阶段 · {r.data.stages.reduce((n, s) => n + s.tasks.length, 0)} 个任务 · {r.data.stages.reduce((n, s) => n + s.skills.length, 0)} 项技能
+          </span>
+          <span class="font-medium text-indigo-300 transition group-hover:translate-x-0.5">开始学习 →</span>
         </div>
       </a>
     ))}

@@ -2,10 +2,9 @@
 import Layout from '../layouts/Layout.astro';
 import ChatWidget from '../components/ChatWidget.astro';
 import { getCollection } from 'astro:content';
-import { roadmaps } from '../data/roadmaps';
 
 const faqCount = (await getCollection('faq')).length;
-const roadmapCount = roadmaps.length;
+const roadmapCount = (await getCollection('roadmaps')).length;
 ---
 
 <Layout title="AI 助手" description="基于站内题库与学习路线的 AI 学习助手，带引用回答你的 AI 开发学习问题" floatingAI={false}>

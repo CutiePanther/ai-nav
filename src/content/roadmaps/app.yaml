@@ -1,0 +1,137 @@
+title: 大模型应用开发
+icon: wrench
+target: 想做 RAG、Agent、智能应用的在职开发 / 转行者
+duration: 约 2~3 个月
+prerequisites:
+  - 会一门编程语言（Python 优先）
+  - 了解 HTTP 与 API 基础
+  - 能读懂英文技术文档
+stages:
+  - name: 筑基：LLM 基础与 API 调用
+    desc: 理解大模型能力边界，掌握主流 API 调用、Token 计费与 Prompt 工程
+    time: 1~2 周
+    skills:
+      - OpenAI/DeepSeek API
+      - Prompt 工程
+      - Function Calling
+      - 结构化输出
+    tasks:
+      - 注册 DeepSeek / OpenAI 平台，跑通第一个 API 调用（hello world）
+      - 搞懂 message 角色（system/user/assistant）、temperature、max_tokens 等参数的含义
+      - 写 10 个不同场景的 Prompt，对比输出差异并总结规律
+      - 用 Function Calling 让模型调用一个自定义函数（如查天气）
+    checkpoint: 能独立写一个「命令行对话 + 结构化 JSON 输出」的小脚本
+    project: 做一个「翻译 + 摘要」命令行工具
+    resources:
+      - label: Prompt 工程指南
+        url: https://www.promptingguide.ai/zh
+        kind: doc
+      - label: DeepSeek 开放平台
+        url: https://platform.deepseek.com
+        kind: doc
+      - label: 吴恩达 LLM 短课程
+        url: https://www.deeplearning.ai/short-courses/
+        kind: course
+      - label: llm-cookbook 中文复现
+        url: https://github.com/datawhalechina/llm-cookbook
+        kind: repo
+  - name: 核心：RAG 与向量检索
+    desc: 掌握文档切分、向量化、混合检索与生成增强的完整链路
+    time: 2~3 周
+    skills:
+      - Embedding
+      - 向量数据库
+      - 混合检索
+      - Rerank 重排
+    tasks:
+      - 理解 chunk 切分策略，动手把一篇 PDF 切成片段
+      - 用 embedding 模型把文本转成向量，观察语义相近文本的相似度
+      - 用 FAISS / Chroma 建本地向量库，实现 top-k 检索
+      - 用 LangChain / LlamaIndex 跑通完整 RAG pipeline
+    checkpoint: 能独立实现一个「上传文档 + 提问回答 + 显示引用来源」的 demo
+    project: 个人知识库问答机器人（喂入自己的笔记 / 文档）
+    resources:
+      - label: LangChain RAG 教程
+        url: https://python.langchain.com/docs/tutorials/rag/
+        kind: doc
+      - label: LlamaIndex 文档
+        url: https://docs.llamaindex.ai
+        kind: doc
+      - label: Chroma 向量库
+        url: https://docs.trychroma.com
+        kind: doc
+      - label: RAG 最佳实践
+        url: https://www.pinecone.io/learn/retrieval-augmented-generation/
+        kind: doc
+  - name: 实战：Agent 与工具调用
+    desc: 构建能规划、调用工具、多轮迭代的智能体，掌握 ReAct 范式
+    time: 2~3 周
+    skills:
+      - ReAct 范式
+      - 工具调用
+      - 记忆机制
+      - 多 Agent 协作
+    tasks:
+      - 理解 ReAct 范式（思考 - 行动 - 观察循环）
+      - 用 LangGraph 构建一个多步骤 Agent
+      - 给 Agent 接入 2~3 个工具（搜索、计算器、外部 API）
+      - 加入记忆机制（短期对话记忆 + 长期摘要记忆）
+    checkpoint: 能构建一个「能规划、能调工具、多轮迭代」的 Agent
+    project: 一个能查天气 + 算数 + 联网搜索的助手
+    resources:
+      - label: LangGraph 入门
+        url: https://langchain-ai.github.io/langgraph/
+        kind: doc
+      - label: Dify 平台
+        url: https://docs.dify.ai
+        kind: doc
+      - label: Anthropic Agent 实践
+        url: https://www.anthropic.com/research/building-effective-agents
+        kind: doc
+  - name: 评测：效果与质量保障
+    desc: 建立评测集，用 RAGAS、LLM-as-a-Judge 度量检索与生成质量
+    time: 1~2 周
+    skills:
+      - 评测集构建
+      - RAGAS
+      - 忠实度评估
+      - A/B 测试
+    tasks:
+      - 构建一个 50 条的评测集（问题 + 参考答案）
+      - 用 RAGAS 评估检索与生成质量（忠实度、相关性）
+      - 用 LLM-as-a-Judge 打分并做 badcase 分析
+      - 设计 A/B 测试对比两版 Prompt 的效果
+    checkpoint: 能量化对比不同方案的效果，并定位 badcase 的根因
+    project: 给自己的问答机器人建一套评测集
+    resources:
+      - label: Ragas 评估框架
+        url: https://docs.ragas.io/
+        kind: doc
+      - label: LLM 评估指南
+        url: https://huggingface.co/blog/clefourrier/llm-evaluation-guide
+        kind: doc
+  - name: 部署：服务化与上线
+    desc: 将应用封装为 API，掌握推理服务、流式输出与工程化部署
+    time: 1~2 周
+    skills:
+      - FastAPI
+      - 流式输出
+      - vLLM 部署
+      - 可观测性
+    tasks:
+      - 用 FastAPI 把应用封装成 API，支持流式输出（SSE）
+      - 用 vLLM 部署一个开源模型并做简单压测
+      - 加日志、监控与限流
+      - 用 Docker 打包，一键启动
+    checkpoint: 能把应用部署为可对外服务、含流式输出的 API
+    project: 把自己的问答机器人部署上线
+    resources:
+      - label: FastAPI
+        url: https://fastapi.tiangolo.com
+        kind: doc
+      - label: vLLM 推理引擎
+        url: https://docs.vllm.ai
+        kind: doc
+      - label: Gradio 演示
+        url: https://www.gradio.app/docs
+        kind: doc

@@ -1,0 +1,122 @@
+title: AI 产品与商业化
+icon: briefcase
+target: 想做 AI 产品经理、AI 应用创业与商业化的同学
+duration: 约 2~3 个月
+prerequisites:
+  - 无需代码基础
+  - 了解 AI 基本能力即可
+  - 有好奇心与产品敏感度
+stages:
+  - name: 筑基：理解 AI 能力边界
+    desc: 搞懂 LLM 能做什么、不能做什么，建立正确的产品预期
+    time: 1 周
+    skills:
+      - 能力边界
+      - 成本认知
+      - 幻觉理解
+      - 场景判断
+    tasks:
+      - 深度体验主流大模型（对话 / 生成 / 分析）
+      - 理解幻觉问题与能力边界
+      - 建立 Token 成本认知（不同模型价格对比）
+      - 练习判断「什么需求适合用 AI 解决」
+    checkpoint: 能判断一个需求是否适合用 AI 解决，并预估成本
+    project: 写一份「AI 能力边界」认知笔记
+    resources:
+      - label: OpenAI Prompt 指南
+        url: https://platform.openai.com/docs/guides/prompt-engineering
+        kind: doc
+      - label: 吴恩达 AI 课程
+        url: https://www.deeplearning.ai/short-courses/
+        kind: course
+  - name: 核心：提示词工程与工作流
+    desc: 用 Prompt、工作流编排与 AI 提效，做出能落地的 AI 应用
+    time: 2 周
+    skills:
+      - Prompt 设计
+      - 工作流编排
+      - Coze/Dify
+      - AI 提效
+    tasks:
+      - 掌握 Prompt 设计（角色 / 示例 / 约束）
+      - 用 Coze / Dify 搭一个工作流
+      - 做一个 AI 提效案例（如自动整理会议纪要）
+      - 理解 Agent 与工作流的区别
+    checkpoint: 能独立搭一个可用的 AI 工作流
+    project: 做一个「自动整理会议纪要」工作流
+    resources:
+      - label: Prompt 工程指南
+        url: https://www.promptingguide.ai/zh
+        kind: doc
+      - label: Coze 平台
+        url: https://www.coze.cn
+        kind: doc
+      - label: Dify 文档
+        url: https://docs.dify.ai
+        kind: doc
+  - name: 实战：AI 产品设计与落地
+    desc: 从需求洞察到 MVP，用产品思维设计 AI 原生产品
+    time: 2~3 周
+    skills:
+      - 需求洞察
+      - MVP 设计
+      - 用户体验
+      - 数据驱动
+    tasks:
+      - 做需求洞察与用户访谈
+      - 设计一个 AI 产品的 MVP
+      - 关注 AI 原生的交互体验（对话式 / 生成式）
+      - 用数据驱动迭代
+    checkpoint: 能从 0 到 1 设计并上线一个 AI 产品 MVP
+    project: 设计并上线一个 AI 产品 MVP
+    resources:
+      - label: a16z AI
+        url: https://a16z.com/ai/
+        kind: doc
+      - label: 产品设计入门
+        url: https://www.productboard.com/
+        kind: doc
+  - name: 进阶：商业化与增长
+    desc: 理解定价、获客、留存与变现，算清 AI 应用的账
+    time: 2 周
+    skills:
+      - 定价策略
+      - 增长获客
+      - 留存优化
+      - 单位经济
+    tasks:
+      - 研究 AI 产品的定价策略（订阅 / 按量 / freemium）
+      - 理解获客与留存漏斗
+      - 算清单位经济模型（LTV / CAC）
+      - 分析一个 AI 产品的商业模式
+    checkpoint: 能算清一个 AI 产品的单位经济模型
+    project: 写一份某 AI 产品的商业分析
+    resources:
+      - label: SaaS 定价
+        url: https://www.priceintelligently.com
+        kind: doc
+      - label: AI 应用图谱
+        url: https://a16z.com/ai/
+        kind: doc
+  - name: 前沿：Agent 产品与 AI Native
+    desc: 探索智能体产品、AI 原生交互与下一代应用形态
+    time: 2 周
+    skills:
+      - Agent 产品
+      - AI 原生体验
+      - 多模态交互
+      - 合规安全
+    tasks:
+      - 研究 Agent 产品形态（自主执行 / 人机协同）
+      - 思考 AI 原生交互（从表单到对话）
+      - 了解多模态交互趋势
+      - 关注合规与安全（数据隐私 / 内容安全）
+    checkpoint: 能设计一个 Agent 产品方案
+    project: 设计一个 Agent 产品方案并写 PRD
+    resources:
+      - label: Anthropic Agent 实践
+        url: https://www.anthropic.com/research/building-effective-agents
+        kind: doc
+      - label: AI 安全合规
+        url: https://www.nist.gov/artificial-intelligence
+        kind: doc

@@ -1,65 +1,158 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { roadmaps } from '../../data/roadmaps';
+import Icon from '../../components/Icon.astro';
+import { getCollection } from 'astro:content';
 
-export function getStaticPaths() {
-  return roadmaps.map((r) => ({ params: { slug: r.slug }, props: { roadmap: r } }));
+export async function getStaticPaths() {
+  const roadmaps = await getCollection('roadmaps');
+  return roadmaps.map((r) => ({ params: { slug: r.id }, props: { roadmap: r } }));
 }
 
 const { roadmap } = Astro.props;
-const all = roadmaps;
+const all = await getCollection('roadmaps');
+const totalTasks = roadmap.data.stages.reduce((n, s) => n + s.tasks.length, 0);
+const totalSkills = roadmap.data.stages.reduce((n, s) => n + s.skills.length, 0);
+
+const roadmapGrads: Record<string, string> = {
+  app: 'linear-gradient(135deg,#22d3ee,#6366f1)',
+  research: 'linear-gradient(135deg,#10b981,#0ea5e9)',
+  engineering: 'linear-gradient(135deg,#f59e0b,#f97316)',
+  multimodal: 'linear-gradient(135deg,#8b5cf6,#ec4899)',
+  product: 'linear-gradient(135deg,#22c55e,#10b981)',
+};
+
+const kindColor: Record<string, string> = {
+  course: 'bg-emerald-500/15 text-emerald-300',
+  repo: 'bg-cyan-500/15 text-cyan-300',
+  doc: 'bg-indigo-500/15 text-indigo-300',
+  practice: 'bg-amber-500/15 text-amber-300',
+};
+const kindLabel: Record<string, string> = {
+  course: '课程',
+  repo: '仓库',
+  doc: '文档',
+  practice: '练习',
+};
 ---
 
-<Layout title={roadmap.title} description={roadmap.target}>
-  <div class="mb-6 flex items-center justify-between">
-    <a href="/roadmap" class="text-sm text-gray-500 hover:text-indigo-600">← 返回路线图</a>
-    <div class="flex items-center gap-2 text-sm">
+<Layout title={roadmap.data.title} description={roadmap.data.target}>
+  <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <a href="/roadmap" class="inline-flex items-center gap-1 text-sm font-medium text-slate-400 transition hover:text-indigo-300">← 返回路线图</a>
+    <div class="flex flex-wrap items-center gap-2 text-sm">
       {all.map((r) => (
         <a
-          href={`/roadmap/${r.slug}`}
+          href={`/roadmap/${r.id}`}
           class:list={[
             'rounded-full px-3 py-1 transition',
-            r.slug === roadmap.slug
-              ? 'bg-indigo-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+            r.id === roadmap.id
+              ? 'bg-grad text-white shadow-md shadow-indigo-500/30'
+              : 'bg-white/[0.04] text-slate-400 ring-1 ring-white/[0.1] hover:ring-indigo-400/40 hover:text-indigo-300',
           ]}
         >
-          {r.title}
+          {r.data.title}
         </a>
       ))}
     </div>
   </div>
 
-  <header class="mb-8 text-center">
-    <div class="text-4xl">{roadmap.icon}</div>
-    <h1 class="mt-3 text-3xl font-bold">{roadmap.title}</h1>
-    <p class="mt-2 text-gray-500">{roadmap.target}</p>
-    <p class="mt-1 text-sm text-indigo-600">预计 {roadmap.duration}</p>
+  <!-- 头图：排版优先，无图标 -->
+  <header class="roadmap-banner noise-overlay relative mb-10 overflow-hidden rounded-3xl border border-white/[0.08] px-6 py-12 text-center sm:py-16">
+    <div class="relative z-10">
+      <div class="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-white/[0.12] bg-black/20 px-3 py-1 text-xs text-slate-300 backdrop-blur-sm">
+        <span class="h-1.5 w-1.5 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.5)]" style={`background:${roadmapGrads[roadmap.id]}`}></span>
+        {roadmap.data.duration} · {roadmap.data.stages.length} 个阶段
+      </div>
+      <h1 class="text-3xl font-bold text-slate-100 sm:text-4xl">{roadmap.data.title}</h1>
+      <p class="mx-auto mt-3 max-w-xl text-slate-300">{roadmap.data.target}</p>
+      <div class="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-slate-400">
+        <span class="rounded-full bg-white/[0.08] px-3 py-1">{totalTasks} 个学习任务</span>
+        <span class="rounded-full bg-white/[0.08] px-3 py-1">{totalSkills} 项核心技能</span>
+      </div>
+    </div>
   </header>
+
+  <!-- 先修要求 -->
+  {roadmap.data.prerequisites.length > 0 && (
+    <div class="card-glow mx-auto mb-10 max-w-2xl rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
+      <h2 class="text-sm font-bold uppercase tracking-wide text-slate-400">先修要求</h2>
+      <ul class="mt-3 space-y-1.5">
+        {roadmap.data.prerequisites.map((p) => (
+          <li class="flex items-center gap-2 text-sm text-slate-300">
+            <span class="bg-grad h-1.5 w-1.5 rounded-full"></span>{p}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
 
   <div class="relative mx-auto max-w-2xl">
     <!-- 时间轴竖线 -->
-    <div class="absolute left-5 top-0 bottom-0 w-px bg-indigo-100"></div>
+    <div class="bg-grad absolute bottom-0 left-[26px] top-0 w-0.5 opacity-20"></div>
 
     <div class="space-y-8">
-      {roadmap.stages.map((stage, i) => (
-        <div class="relative flex gap-4">
+      {roadmap.data.stages.map((stage, i) => (
+        <div class="relative flex gap-5">
           <!-- 节点圆点 -->
-          <div class="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white ring-4 ring-white">
+          <div class="bg-grad relative z-10 flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl text-lg font-bold text-white shadow-md shadow-indigo-500/40">
             {i + 1}
           </div>
-          <div class="flex-1 rounded-xl border border-gray-200 bg-white p-5">
-            <h2 class="font-semibold text-gray-900">{stage.name}</h2>
-            <p class="mt-1 text-sm text-gray-500">{stage.desc}</p>
-            <div class="mt-3 flex flex-wrap gap-2">
+          <div class="card-glow flex-1 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h2 class="font-bold text-slate-100">{stage.name}</h2>
+              <span class="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2.5 py-1 text-xs font-medium text-slate-400"><Icon name="clock" size={12} />{stage.time}</span>
+            </div>
+            <p class="mt-1.5 text-sm leading-relaxed text-slate-400">{stage.desc}</p>
+
+            <!-- 核心技能点 -->
+            <div class="mt-4 flex flex-wrap gap-1.5">
+              {stage.skills.map((sk) => (
+                <span class="rounded-full bg-indigo-500/15 px-2.5 py-1 text-xs font-medium text-indigo-200">{sk}</span>
+              ))}
+            </div>
+
+            <!-- 具体任务 -->
+            <div class="mt-4 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <p class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500"><Icon name="check-circle" size={14} class="text-emerald-400" /> 具体任务</p>
+              <ul class="mt-2.5 space-y-1.5">
+                {stage.tasks.map((t) => (
+                  <li class="flex items-start gap-2 text-sm leading-relaxed text-slate-300">
+                    <span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-400"></span>{t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <!-- 检验标准 -->
+            <div class="mt-3 flex items-start gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-4">
+              <Icon name="flag" size={16} class="mt-0.5 shrink-0 text-amber-300" />
+              <div>
+                <p class="text-xs font-bold uppercase tracking-wide text-amber-400">检验标准（通过才能进入下一阶段）</p>
+                <p class="mt-1 text-sm leading-relaxed text-amber-100/90">{stage.checkpoint}</p>
+              </div>
+            </div>
+
+            <!-- 实践项目 -->
+            {stage.project && (
+              <div class="mt-3 flex items-start gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] p-4">
+                <Icon name="hammer" size={16} class="mt-0.5 shrink-0 text-emerald-300" />
+                <div>
+                  <p class="text-xs font-bold uppercase tracking-wide text-emerald-400">实践项目</p>
+                  <p class="mt-1 text-sm leading-relaxed text-emerald-100/90">{stage.project}</p>
+                </div>
+              </div>
+            )}
+
+            <!-- 资源 -->
+            <div class="mt-4 flex flex-wrap gap-2">
               {stage.resources.map((res) => (
                 <a
                   href={res.url}
                   target="_blank"
                   rel="noopener"
-                  class="rounded-lg bg-indigo-50 px-3 py-1.5 text-sm text-indigo-700 transition hover:bg-indigo-100"
+                  class="inline-flex items-center gap-1.5 rounded-lg bg-indigo-500/15 px-3 py-1.5 text-sm font-medium text-indigo-200 transition hover:bg-indigo-500/25"
                 >
                   {res.label} ↗
+                  {res.kind && <span class={`rounded px-1 py-0.5 text-[10px] font-semibold ${kindColor[res.kind] ?? ''}`}>{kindLabel[res.kind]}</span>}
                 </a>
               ))}
             </div>

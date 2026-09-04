@@ -9,7 +9,8 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.resolve(__dirname, '../dist');
-const SITE = 'https://ai-dev-nav.example.com'; // 上线后改成真实域名
+// 与 astro.config.mjs 同源：优先读 SITE_URL 环境变量，未配置回退占位域名
+const SITE = process.env.SITE_URL || 'https://ai-dev-nav.example.com';
 
 async function walk(dir) {
   const urls = [];

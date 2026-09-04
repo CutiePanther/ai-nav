@@ -3,9 +3,12 @@ import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
+// 站点域名：上线时在部署平台配置 SITE_URL 环境变量即可，无需改代码
+// 未配置时回退到占位域名（仅供本地/预览，勿用于生产）
+const SITE_URL = process.env.SITE_URL || 'https://ai-dev-nav.example.com';
+
 export default defineConfig({
-  // TODO: 上线前改成真实域名（同步改 scripts/gen-sitemap.mjs 的 SITE）
-  site: 'https://ai-dev-nav.example.com',
+  site: SITE_URL,
   vite: {
     plugins: [tailwindcss()],
   },

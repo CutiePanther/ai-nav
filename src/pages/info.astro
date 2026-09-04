@@ -5,38 +5,78 @@ import { getCollection } from 'astro:content';
 const info = (await getCollection('info'))
   .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 
-const categories = [...new Set(info.map((i) => i.data.category))];
-const categoryColor: Record<string, string> = {
-  行业快讯: 'bg-indigo-50 text-indigo-600',
-  技术前沿: 'bg-purple-50 text-purple-600',
-  开源动态: 'bg-emerald-50 text-emerald-600',
-  政策产业: 'bg-orange-50 text-orange-600',
-};
+const categories = ['行业快讯', '技术前沿', '开源动态', '政策产业'];
+const catCount = (cat: string) => info.filter((i) => i.data.category === cat).length;
+
+const ACTIVE = 'tab-chip inline-flex items-center gap-1.5 whitespace-nowrap border-b-2 border-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-text)] transition';
+const IDLE = 'tab-chip inline-flex items-center gap-1.5 whitespace-nowrap border-b-2 border-transparent px-4 py-2 text-sm text-[var(--text-2)] transition hover:text-[var(--text-1)]';
 ---
 
 <Layout title="最新资讯" description="聚合 AI 行业快讯、技术前沿、开源动态、政策产业的资讯外链与摘要">
-  <h1 class="text-2xl font-bold">最新资讯</h1>
-  <p class="mt-2 text-gray-500">聚合外链 + 摘要，点击跳转原文。分类：{categories.join(' · ')}。</p>
+  <header class="mb-6">
+    <h1 class="text-3xl font-bold sm:text-4xl">最新资讯</h1>
+    <p class="mt-3 max-w-2xl text-[var(--text-2)]">
+      聚合外链 + 摘要，构建期自动抓取 RSS 源，点击条目查看详情并跳转原文。
+    </p>
+  </header>
 
-  <div class="mt-8 space-y-4">
+  <!-- 分类 Tab -->
+  <div class="mb-6 flex flex-wrap gap-1 border-b border-[var(--border)]" id="filter-bar">
+    <button data-filter="all" class={ACTIVE}>
+      全部<span class="rounded-full bg-[var(--surface-2)] px-1.5 py-0.5 text-xs">{info.length}</span>
+    </button>
+    {categories.map((c) => (
+      <button data-filter={c} class={IDLE}>
+        {c}<span class="rounded-full bg-[var(--surface-2)] px-1.5 py-0.5 text-xs">{catCount(c)}</span>
+      </button>
+    ))}
+  </div>
+
+  <div class="space-y-3">
     {info.map((item) => (
       <a
         href={`/info/${item.id}/`}
-        class="block rounded-xl border border-gray-200 bg-white p-5 transition hover:border-indigo-300 hover:shadow"
+        data-category={item.data.category}
+        class="info-card card card-lift block p-5"
       >
         <div class="flex items-center gap-2 text-xs">
-          <span class={`rounded px-2 py-0.5 ${categoryColor[item.data.category] ?? 'bg-gray-100 text-gray-600'}`}>
-            {item.data.category}
-          </span>
-          <span class="text-gray-400">{item.data.source}</span>
-          <span class="text-gray-400">·</span>
-          <time class="text-gray-400" datetime={item.data.date.toISOString()}>
+          <span class="badge shrink-0">{item.data.category}</span>
+          <span class="text-[var(--text-3)]">{item.data.source}</span>
+          <span class="text-[var(--text-3)]">·</span>
+          <time class="text-[var(--text-3)]" datetime={item.data.date.toISOString()}>
             {item.data.date.toLocaleDateString('zh-CN')}
           </time>
         </div>
-        <h2 class="mt-2 font-semibold leading-snug hover:text-indigo-600">{item.data.title}</h2>
-        <p class="mt-2 text-sm leading-relaxed text-gray-500">{item.data.summary}</p>
+        <h2 class="mt-2 font-semibold leading-snug text-[var(--text-1)] transition hover:text-[var(--accent-text)]">{item.data.title}</h2>
+        <p class="mt-2 text-sm leading-relaxed text-[var(--text-2)]">{item.data.summary}</p>
       </a>
     ))}
   </div>
+
+  <!-- 空状态 -->
+  <div id="info-empty" class="card mt-8 hidden p-12 text-center">
+    <p class="text-[var(--text-2)]">该分类暂无资讯。</p>
+  </div>
 </Layout>
+
+<script>
+  const chips = document.querySelectorAll('.tab-chip');
+  const cards = document.querySelectorAll('.info-card');
+  const empty = document.getElementById('info-empty');
+  const ACTIVE = 'tab-chip inline-flex items-center gap-1.5 whitespace-nowrap border-b-2 border-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-text)] transition';
+  const IDLE = 'tab-chip inline-flex items-center gap-1.5 whitespace-nowrap border-b-2 border-transparent px-4 py-2 text-sm text-[var(--text-2)] transition hover:text-[var(--text-1)]';
+
+  chips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const f = chip.dataset.filter;
+      chips.forEach((c) => { c.className = c.dataset.filter === f ? ACTIVE : IDLE; });
+      let visible = 0;
+      cards.forEach((card) => {
+        const show = f === 'all' || card.dataset.category === f;
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      empty.classList.toggle('hidden', visible > 0);
+    });
+  });
+</script>

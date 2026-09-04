@@ -1,21 +1,321 @@
 @import "tailwindcss";
 
+/*
+ * 设计系统：Editorial Dark（参考 Linear / Vercel）
+ * 原则：
+ *   1. 单一 accent（indigo 色阶重定义为品牌蓝 #5E6AD2 系）
+ *   2. 层级靠亮度阶梯 + 边框透明度 + 留白，不靠多色渐变
+ *   3. 无发光、无渐变文字、无背景光晕
+ */
+
+@theme {
+  /* 品牌蓝（Linear 式），覆盖 Tailwind indigo 默认色阶 */
+  --color-indigo-200: #c7cdfb;
+  --color-indigo-300: #a5b0fa;
+  --color-indigo-400: #7d89f7;
+  --color-indigo-500: #5e6ad2;
+  --color-indigo-600: #4f5ac2;
+
+  /* 功能色（仅用于状态语义：难度/价格，不做装饰） */
+  --color-ok: #34d399;
+  --color-warn: #fbbf24;
+  --color-danger: #f87171;
+}
+
 :root {
-  --accent: #6366f1;
+  --bg: #0b0c0f;
+  --surface: rgba(255, 255, 255, 0.025);
+  --surface-2: rgba(255, 255, 255, 0.05);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --text-1: #f2f3f5;
+  --text-2: #9ca3af;
+  --text-3: #6b7280;
+  --accent: #5e6ad2;
+  --accent-text: #a5b0fa;
 }
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC",
     "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  color: #1f2937;
-  background: #f8fafc;
+  color: var(--text-1);
+  background-color: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 a {
   color: inherit;
   text-decoration: none;
+}
+
+::selection {
+  background: rgba(94, 106, 210, 0.4);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ===== 组件类 ===== */
+
+/* 基础卡片：边框 + 面板色，hover 仅提亮边框 */
+.card {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.card:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+
+/* 卡片悬浮位移（保留给需要强调的入口卡，去掉发光） */
+.card-lift {
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.card-lift:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+
+/* 章节标题：左侧短 accent 竖条 */
+.section-title {
+  position: relative;
+  padding-left: 14px;
+}
+.section-title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.22em;
+  bottom: 0.22em;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+
+/* 徽章 */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  padding: 2px 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+/* 主按钮：纯色 */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--accent);
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  transition: background 0.15s ease;
+}
+.btn-primary:hover {
+  background: var(--color-indigo-600);
+}
+
+/* 次按钮：描边 */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.btn-ghost:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+
+/* 阶段进度点 */
+.stage-progress {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.stage-progress .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  transition: background 0.25s ease;
+}
+.stage-progress .dot.active {
+  background: var(--accent);
+}
+.stage-progress .bar {
+  flex: 1;
+  height: 2px;
+  min-width: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+.stage-progress .bar.active {
+  background: var(--accent);
+  opacity: 0.6;
+}
+
+/* 难度分布小条 */
+.diff-mini {
+  display: flex;
+  height: 5px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+.diff-mini span {
+  transition: opacity 0.25s ease;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.24);
+  background-clip: content-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ===== 题库详细解答排版（markdown 渲染）===== */
+.prose-answer {
+  line-height: 1.85;
+  font-size: 0.975rem;
+  color: var(--text-2);
+}
+.prose-answer > * + * {
+  margin-top: 0.9em;
+}
+.prose-answer h2 {
+  margin-top: 1.6em;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-1);
+  padding-bottom: 0.4em;
+  border-bottom: 1px solid var(--border);
+}
+.prose-answer h3 {
+  margin-top: 1.4em;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--text-1);
+}
+.prose-answer p {
+  margin-top: 0.7em;
+}
+.prose-answer strong {
+  color: var(--text-1);
+  font-weight: 600;
+}
+.prose-answer a {
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prose-answer ul,
+.prose-answer ol {
+  margin-top: 0.7em;
+  padding-left: 1.4em;
+}
+.prose-answer ul {
+  list-style: disc;
+}
+.prose-answer ol {
+  list-style: decimal;
+}
+.prose-answer li {
+  margin-top: 0.4em;
+}
+.prose-answer li::marker {
+  color: var(--accent-text);
+}
+.prose-answer code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.875em;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  padding: 0.1em 0.4em;
+  border-radius: 5px;
+}
+.prose-answer pre {
+  margin-top: 0.9em;
+  padding: 1em 1.2em;
+  background: #08090c;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow-x: auto;
+}
+.prose-answer pre code {
+  color: var(--text-2);
+  background: none;
+  border: none;
+  padding: 0;
+}
+.prose-answer blockquote {
+  margin-top: 0.9em;
+  padding: 0.6em 1em;
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  border-radius: 0 8px 8px 0;
+  color: var(--text-2);
+}
+.prose-answer table {
+  margin-top: 0.9em;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+.prose-answer th,
+.prose-answer td {
+  border: 1px solid var(--border);
+  padding: 0.55em 0.8em;
+  text-align: left;
+}
+.prose-answer th {
+  background: var(--surface-2);
+  color: var(--text-1);
+  font-weight: 600;
+}
+.prose-answer hr {
+  margin: 1.4em 0;
+  border: none;
+  border-top: 1px solid var(--border);
 }

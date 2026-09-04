@@ -13,19 +13,11 @@ const all = await getCollection('roadmaps');
 const totalTasks = roadmap.data.stages.reduce((n, s) => n + s.tasks.length, 0);
 const totalSkills = roadmap.data.stages.reduce((n, s) => n + s.skills.length, 0);
 
-const roadmapGrads: Record<string, string> = {
-  app: 'linear-gradient(135deg,#22d3ee,#6366f1)',
-  research: 'linear-gradient(135deg,#10b981,#0ea5e9)',
-  engineering: 'linear-gradient(135deg,#f59e0b,#f97316)',
-  multimodal: 'linear-gradient(135deg,#8b5cf6,#ec4899)',
-  product: 'linear-gradient(135deg,#22c55e,#10b981)',
-};
-
 const kindColor: Record<string, string> = {
-  course: 'bg-emerald-500/15 text-emerald-300',
-  repo: 'bg-cyan-500/15 text-cyan-300',
-  doc: 'bg-indigo-500/15 text-indigo-300',
-  practice: 'bg-amber-500/15 text-amber-300',
+  course: 'text-emerald-400',
+  repo: 'text-[var(--accent-text)]',
+  doc: 'text-[var(--accent-text)]',
+  practice: 'text-amber-400',
 };
 const kindLabel: Record<string, string> = {
   course: '课程',
@@ -37,7 +29,7 @@ const kindLabel: Record<string, string> = {
 
 <Layout title={roadmap.data.title} description={roadmap.data.target}>
   <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
-    <a href="/roadmap" class="inline-flex items-center gap-1 text-sm font-medium text-slate-400 transition hover:text-indigo-300">← 返回路线图</a>
+    <a href="/roadmap" class="inline-flex items-center gap-1 text-sm font-medium text-[var(--text-2)] transition hover:text-[var(--accent-text)]">← 返回路线图</a>
     <div class="flex flex-wrap items-center gap-2 text-sm">
       {all.map((r) => (
         <a
@@ -45,8 +37,8 @@ const kindLabel: Record<string, string> = {
           class:list={[
             'rounded-full px-3 py-1 transition',
             r.id === roadmap.id
-              ? 'bg-grad text-white shadow-md shadow-indigo-500/30'
-              : 'bg-white/[0.04] text-slate-400 ring-1 ring-white/[0.1] hover:ring-indigo-400/40 hover:text-indigo-300',
+              ? 'bg-[var(--accent)] font-medium text-white'
+              : 'bg-[var(--surface)] text-[var(--text-2)] ring-1 ring-[var(--border)] hover:text-[var(--accent-text)] hover:ring-[var(--border-strong)]',
           ]}
         >
           {r.data.title}
@@ -56,29 +48,29 @@ const kindLabel: Record<string, string> = {
   </div>
 
   <!-- 头图：排版优先，无图标 -->
-  <header class="roadmap-banner noise-overlay relative mb-10 overflow-hidden rounded-3xl border border-white/[0.08] px-6 py-12 text-center sm:py-16">
+  <header class="relative mb-10 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-6 py-12 text-center sm:py-16">
     <div class="relative z-10">
-      <div class="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-white/[0.12] bg-black/20 px-3 py-1 text-xs text-slate-300 backdrop-blur-sm">
-        <span class="h-1.5 w-1.5 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.5)]" style={`background:${roadmapGrads[roadmap.id]}`}></span>
+      <div class="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-3 py-1 text-xs text-[var(--text-2)]">
+        <span class="h-1.5 w-1.5 rounded-full bg-[var(--accent)]"></span>
         {roadmap.data.duration} · {roadmap.data.stages.length} 个阶段
       </div>
-      <h1 class="text-3xl font-bold text-slate-100 sm:text-4xl">{roadmap.data.title}</h1>
-      <p class="mx-auto mt-3 max-w-xl text-slate-300">{roadmap.data.target}</p>
-      <div class="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-slate-400">
-        <span class="rounded-full bg-white/[0.08] px-3 py-1">{totalTasks} 个学习任务</span>
-        <span class="rounded-full bg-white/[0.08] px-3 py-1">{totalSkills} 项核心技能</span>
+      <h1 class="text-3xl font-bold text-[var(--text-1)] sm:text-4xl">{roadmap.data.title}</h1>
+      <p class="mx-auto mt-3 max-w-xl text-[var(--text-2)]">{roadmap.data.target}</p>
+      <div class="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-[var(--text-2)]">
+        <span class="rounded-full bg-[var(--surface-2)] px-3 py-1">{totalTasks} 个学习任务</span>
+        <span class="rounded-full bg-[var(--surface-2)] px-3 py-1">{totalSkills} 项核心技能</span>
       </div>
     </div>
   </header>
 
   <!-- 先修要求 -->
   {roadmap.data.prerequisites.length > 0 && (
-    <div class="card-glow mx-auto mb-10 max-w-2xl rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
-      <h2 class="text-sm font-bold uppercase tracking-wide text-slate-400">先修要求</h2>
+    <div class="card mx-auto mb-10 max-w-2xl p-5">
+      <h2 class="text-sm font-bold uppercase tracking-wide text-[var(--text-2)]">先修要求</h2>
       <ul class="mt-3 space-y-1.5">
         {roadmap.data.prerequisites.map((p) => (
-          <li class="flex items-center gap-2 text-sm text-slate-300">
-            <span class="bg-grad h-1.5 w-1.5 rounded-full"></span>{p}
+          <li class="flex items-center gap-2 text-sm text-[var(--text-2)]">
+            <span class="h-1.5 w-1.5 rounded-full bg-[var(--accent)]"></span>{p}
           </li>
         ))}
       </ul>
@@ -87,36 +79,36 @@ const kindLabel: Record<string, string> = {
 
   <div class="relative mx-auto max-w-2xl">
     <!-- 时间轴竖线 -->
-    <div class="bg-grad absolute bottom-0 left-[26px] top-0 w-0.5 opacity-20"></div>
+    <div class="absolute bottom-0 left-[26px] top-0 w-0.5 bg-[var(--accent)] opacity-20"></div>
 
     <div class="space-y-8">
       {roadmap.data.stages.map((stage, i) => (
         <div class="relative flex gap-5">
           <!-- 节点圆点 -->
-          <div class="bg-grad relative z-10 flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl text-lg font-bold text-white shadow-md shadow-indigo-500/40">
+          <div class="relative z-10 flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-lg font-bold text-white">
             {i + 1}
           </div>
-          <div class="card-glow flex-1 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6">
+          <div class="card flex-1 p-6">
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <h2 class="font-bold text-slate-100">{stage.name}</h2>
-              <span class="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-2.5 py-1 text-xs font-medium text-slate-400"><Icon name="clock" size={12} />{stage.time}</span>
+              <h2 class="font-bold text-[var(--text-1)]">{stage.name}</h2>
+              <span class="badge"><Icon name="clock" size={12} />{stage.time}</span>
             </div>
-            <p class="mt-1.5 text-sm leading-relaxed text-slate-400">{stage.desc}</p>
+            <p class="mt-1.5 text-sm leading-relaxed text-[var(--text-2)]">{stage.desc}</p>
 
             <!-- 核心技能点 -->
             <div class="mt-4 flex flex-wrap gap-1.5">
               {stage.skills.map((sk) => (
-                <span class="rounded-full bg-indigo-500/15 px-2.5 py-1 text-xs font-medium text-indigo-200">{sk}</span>
+                <span class="rounded-full bg-[var(--accent)]/15 px-2.5 py-1 text-xs font-medium text-[var(--accent-text)]">{sk}</span>
               ))}
             </div>
 
             <!-- 具体任务 -->
-            <div class="mt-4 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-              <p class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500"><Icon name="check-circle" size={14} class="text-emerald-400" /> 具体任务</p>
+            <div class="mt-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
+              <p class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[var(--text-3)]"><Icon name="check-circle" size={14} class="text-emerald-400" /> 具体任务</p>
               <ul class="mt-2.5 space-y-1.5">
                 {stage.tasks.map((t) => (
-                  <li class="flex items-start gap-2 text-sm leading-relaxed text-slate-300">
-                    <span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-400"></span>{t}
+                  <li class="flex items-start gap-2 text-sm leading-relaxed text-[var(--text-2)]">
+                    <span class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]"></span>{t}
                   </li>
                 ))}
               </ul>
@@ -149,10 +141,10 @@ const kindLabel: Record<string, string> = {
                   href={res.url}
                   target="_blank"
                   rel="noopener"
-                  class="inline-flex items-center gap-1.5 rounded-lg bg-indigo-500/15 px-3 py-1.5 text-sm font-medium text-indigo-200 transition hover:bg-indigo-500/25"
+                  class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-sm font-medium text-[var(--accent-text)] transition hover:border-[var(--border-strong)] hover:bg-[var(--surface-2)]"
                 >
                   {res.label} ↗
-                  {res.kind && <span class={`rounded px-1 py-0.5 text-[10px] font-semibold ${kindColor[res.kind] ?? ''}`}>{kindLabel[res.kind]}</span>}
+                  {res.kind && <span class={`text-[10px] font-semibold ${kindColor[res.kind] ?? ''}`}>{kindLabel[res.kind]}</span>}
                 </a>
               ))}
             </div>

@@ -1,17 +1,22 @@
 ---
 import '../styles/global.css';
 import Search from '../components/Search.astro';
+import ChatWidget from '../components/ChatWidget.astro';
 
 interface Props {
   title: string;
   description?: string;
+  /** 是否注入全站悬浮球 AI 助手（默认 true；/ai 独立页关掉，避免与内嵌面板重复） */
+  floatingAI?: boolean;
 }
 
-const { title, description } = Astro.props;
+const { title, description, floatingAI = true } = Astro.props;
 const siteName = 'AI 开发学习导航';
 
 const navLinks = [
+  { href: '/ai', label: 'AI 助手' },
   { href: '/docs', label: '文档' },
+  { href: '/tools', label: '工具' },
   { href: '/info', label: '资讯' },
   { href: '/faq', label: '题库' },
   { href: '/roadmap', label: '路线图' },
@@ -36,18 +41,21 @@ const path = Astro.url.pathname;
     <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
   </head>
   <body class="flex min-h-screen flex-col">
-    <header class="sticky top-0 z-30 border-b border-gray-200 bg-white/85 backdrop-blur">
-      <div class="mx-auto flex max-w-5xl items-center gap-4 px-4 py-3">
-        <a href="/" class="shrink-0 text-lg font-bold tracking-tight">
-          <span class="text-indigo-600">AI</span>开发学习导航
+    <header class="sticky top-0 z-30 border-b border-[var(--border)] bg-[#0b0c0f]/85 backdrop-blur-md">
+      <div class="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
+        <a href="/" class="flex shrink-0 items-center gap-2 font-bold tracking-tight">
+          <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)] text-sm font-bold text-white">AI</span>
+          <span class="text-base sm:text-lg">开发学习导航</span>
         </a>
-        <nav class="hidden shrink-0 items-center gap-5 text-sm font-medium text-gray-600 sm:flex">
+        <nav class="hidden shrink-0 items-center gap-1 text-sm font-medium text-[var(--text-2)] md:flex">
           {navLinks.map((l) => (
             <a
               href={l.href}
               class:list={[
-                'hover:text-indigo-600',
-                (path === l.href || path.startsWith(l.href + '/')) && 'text-indigo-600 font-semibold',
+                'rounded-lg px-3 py-1.5 transition',
+                (path === l.href || path.startsWith(l.href + '/'))
+                  ? 'bg-white/[0.06] font-semibold text-[var(--text-1)]'
+                  : 'hover:bg-white/[0.04] hover:text-[var(--text-1)]',
               ]}
             >
               {l.label}
@@ -58,14 +66,73 @@ const path = Astro.url.pathname;
           <Search />
         </div>
       </div>
+      <!-- 移动端导航 -->
+      <nav class="flex items-center gap-1 overflow-x-auto px-4 pb-2 text-sm font-medium text-[var(--text-2)] md:hidden">
+        {navLinks.map((l) => (
+          <a
+            href={l.href}
+            class:list={[
+              'shrink-0 rounded-full px-3 py-1 transition',
+              (path === l.href || path.startsWith(l.href + '/'))
+                ? 'bg-[var(--accent)] font-semibold text-white'
+                : 'bg-white/[0.05] hover:bg-white/[0.09]',
+            ]}
+          >
+            {l.label}
+          </a>
+        ))}
+      </nav>
     </header>
 
-    <main class="mx-auto w-full max-w-5xl flex-1 px-4 py-8" data-pagefind-body>
+    <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10" data-pagefind-body>
       <slot />
     </main>
 
-    <footer class="border-t border-gray-200 py-8 text-center text-sm text-gray-400">
-      AI 开发学习导航 · 聚合外链 + 精选内容，助你高效学习 AI
+    <footer class="mt-8 border-t border-[var(--border)]">
+      <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <div class="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+          <div class="max-w-sm">
+            <div class="flex items-center gap-2 font-bold">
+              <span class="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--accent)] text-xs font-bold text-white">AI</span>
+              <span>AI 开发学习导航</span>
+            </div>
+            <p class="mt-3 text-sm leading-relaxed text-[var(--text-2)]">
+              追资讯 · 查文档 · 找工具 · 刷题库 · 跟路线，AI 开发者的一站式学习导航站。
+            </p>
+          </div>
+          <div class="grid grid-cols-2 gap-8 text-sm sm:grid-cols-3">
+            <div>
+              <p class="font-semibold text-[var(--text-1)]">内容</p>
+              <ul class="mt-3 space-y-2 text-[var(--text-2)]">
+                {navLinks.map((l) => (
+                  <li><a href={l.href} class="transition hover:text-[var(--text-1)]">{l.label}</a></li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <p class="font-semibold text-[var(--text-1)]">说明</p>
+              <ul class="mt-3 space-y-2 text-[var(--text-2)]">
+                <li>聚合外链 + 精选内容</li>
+                <li>资讯构建期自动抓取</li>
+                <li>Git 版本化维护</li>
+              </ul>
+            </div>
+            <div>
+              <p class="font-semibold text-[var(--text-1)]">技术</p>
+              <ul class="mt-3 space-y-2 text-[var(--text-2)]">
+                <li>Astro 7</li>
+                <li>Tailwind CSS v4</li>
+                <li>Pagefind 搜索</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="mt-8 border-t border-[var(--border)] pt-6 text-center text-xs text-[var(--text-3)]">
+          © {new Date().getFullYear()} AI 开发学习导航 · 内容版权归原作者所有，本站仅做聚合导航
+        </div>
+      </div>
     </footer>
+
+    {floatingAI && <ChatWidget mode="floating" />}
   </body>
 </html>

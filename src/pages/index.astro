@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
+import { Icon } from 'astro-icon/components';
 
 const docs = await getCollection('docs');
 const tools = await getCollection('tools');
@@ -52,161 +53,136 @@ const toolPreviewNames = featuredTools.slice(0, 4).map((t: any) => t.data.title)
 // 资讯预览标题
 const infoPreview = info.slice(0, 2);
 
-// 栏目数据
+// 栏目数据（单一 accent，图标区分栏目）
 const columns = [
   {
     href: '/docs',
     title: '官方文档',
+    icon: 'lucide:book-open',
     desc: '大模型 API、框架、推理部署、向量库——按分类聚合，快速定位官方资料。',
     count: `${docs.length} 个条目`,
-    grad: 'from-cyan-400 to-indigo-500',
     span: 'lg:col-span-4 lg:row-span-2',
     previewType: 'docs',
   },
   {
     href: '/tools',
     title: 'AI 工具大全',
+    icon: 'lucide:wrench',
     desc: '编程、开发平台、智能体、聊天、大模型。',
     count: `${tools.length} 个工具`,
-    grad: 'from-amber-400 to-orange-500',
     span: 'lg:col-span-2',
     previewType: 'tools',
   },
   {
     href: '/info',
     title: '最新资讯',
+    icon: 'lucide:newspaper',
     desc: '行业快讯、技术前沿、开源动态。',
     count: `${info.length} 条 · 持续更新`,
-    grad: 'from-sky-400 to-indigo-500',
     span: 'lg:col-span-2',
     previewType: 'info',
   },
   {
     href: '/faq',
     title: '精选面试题',
+    icon: 'lucide:circle-help',
     desc: '大模型、机器学习、深度学习、AI 八股文。',
     count: `${faq.length} 道题目`,
-    grad: 'from-violet-400 to-fuchsia-500',
     span: 'lg:col-span-3',
     previewType: 'faq',
   },
   {
     href: '/roadmap',
     title: '学习路线图',
+    icon: 'lucide:route',
     desc: '应用开发、算法研究、工程化、多模态、产品商业化。',
     count: `${roadmaps.length} 条路线`,
-    grad: 'from-emerald-400 to-sky-500',
     span: 'lg:col-span-3',
     previewType: 'roadmap',
   },
 ];
 
-const roadmapGrads: Record<string, string> = {
-  app: 'linear-gradient(135deg,#22d3ee,#6366f1)',
-  research: 'linear-gradient(135deg,#10b981,#0ea5e9)',
-  engineering: 'linear-gradient(135deg,#f59e0b,#f97316)',
-  multimodal: 'linear-gradient(135deg,#8b5cf6,#ec4899)',
-  product: 'linear-gradient(135deg,#22c55e,#10b981)',
-};
-
 const freeColor: Record<string, string> = {
-  免费: 'bg-emerald-500/15 text-emerald-300',
-  付费: 'bg-rose-500/15 text-rose-300',
-  免费增值: 'bg-amber-500/15 text-amber-300',
+  免费: 'text-emerald-400',
+  付费: 'text-rose-400',
+  免费增值: 'text-amber-400',
 };
 const diffColor: Record<string, string> = {
-  入门: 'bg-emerald-500/15 text-emerald-300',
-  进阶: 'bg-amber-500/15 text-amber-300',
-  高级: 'bg-rose-500/15 text-rose-300',
+  入门: 'text-emerald-400',
+  进阶: 'text-amber-400',
+  高级: 'text-rose-400',
 };
 ---
 
 <Layout title="首页" description="AI 开发者的一站式学习导航站：聚合文档、工具、资讯、题库与学习路线，从入门到进阶的完整路径">
-  <!-- ============ Hero 区（带生成背景图） ============ -->
-  <section class="hero-bg card-glow relative overflow-hidden rounded-3xl border border-white/[0.08]">
-    <div class="relative px-6 py-20 sm:px-10 sm:py-28">
-      <div class="relative mx-auto max-w-3xl text-center">
-        <span class="inline-flex items-center gap-1.5 rounded-full border border-white/[0.12] bg-black/20 px-3 py-1 text-xs font-medium text-slate-200 backdrop-blur-sm">
-          <span class="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.9)]"></span>
-          AI 开发者的聚合学习导航
-        </span>
+  <!-- ============ Hero 区 ============ -->
+  <section class="py-16 text-center sm:py-24">
+    <span class="badge mx-auto">
+      <span class="h-1.5 w-1.5 rounded-full bg-[var(--accent)]"></span>
+      AI 开发者的聚合学习导航
+    </span>
 
-        <h1 class="mx-auto mt-6 max-w-3xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-6xl">
-          从入门到进阶的<br />
-          <span class="text-grad">AI 开发学习路径</span>
-        </h1>
+    <h1 class="mx-auto mt-6 max-w-3xl text-4xl font-bold leading-[1.15] tracking-tight text-[var(--text-1)] sm:text-6xl">
+      从入门到进阶的<br />AI 开发学习路径
+    </h1>
 
-        <p class="mx-auto mt-5 max-w-2xl text-base text-slate-300 sm:text-lg">
-          聚合散落各处的优质资源——文档、工具、资讯、题库、学习路线，结构清晰、可检索、持续更新。不用再到处收藏，一个站搞定。
-        </p>
+    <p class="mx-auto mt-5 max-w-2xl text-base text-[var(--text-2)] sm:text-lg">
+      聚合散落各处的优质资源——文档、工具、资讯、题库、学习路线，结构清晰、可检索、持续更新。不用再到处收藏，一个站搞定。
+    </p>
 
-        <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <a href="/ai" class="bg-grad rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:opacity-90">
-            问 AI 助手 ✨
-          </a>
-          <a href="#explore" class="rounded-xl border border-white/[0.14] bg-white/[0.06] px-6 py-3 text-sm font-semibold text-slate-100 backdrop-blur-sm transition hover:border-indigo-400/40 hover:text-indigo-200">
-            开始探索 →
-          </a>
-          <a href="/roadmap" class="rounded-xl border border-white/[0.14] bg-white/[0.06] px-6 py-3 text-sm font-semibold text-slate-100 backdrop-blur-sm transition hover:border-indigo-400/40 hover:text-indigo-200">
-            查看学习路线
-          </a>
+    <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+      <a href="/ai" class="btn-primary">问 AI 助手</a>
+      <a href="#explore" class="btn-ghost">开始探索</a>
+      <a href="/roadmap" class="btn-ghost">查看学习路线</a>
+    </div>
+
+    <div class="mx-auto mt-12 flex max-w-2xl flex-wrap items-center justify-center gap-x-8 gap-y-3">
+      {stats.map((s) => (
+        <div class="flex items-baseline gap-1.5">
+          <span class="text-2xl font-bold tabular-nums text-[var(--text-1)]">{s.num}</span>
+          <span class="text-sm text-[var(--text-3)]">{s.label}</span>
         </div>
-
-        <div class="mx-auto mt-10 flex max-w-2xl flex-wrap items-center justify-center gap-x-8 gap-y-3">
-          {stats.map((s) => (
-            <div class="flex items-baseline gap-1.5">
-              <span class="text-2xl font-bold tabular-nums text-white">{s.num}</span>
-              <span class="text-sm text-slate-300">{s.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      ))}
     </div>
   </section>
 
   <!-- ============ 栏目入口（Bento 网格） ============ -->
-  <section id="explore" class="mt-16 scroll-mt-24">
+  <section id="explore" class="mt-8 scroll-mt-24">
     <div class="mb-8 flex items-end justify-between">
       <div>
         <h2 class="section-title text-2xl font-bold">开始探索</h2>
-        <p class="mt-4 max-w-xl text-slate-400">五个栏目，覆盖 AI 开发学习的完整闭环</p>
+        <p class="mt-3 max-w-xl text-[var(--text-2)]">五个栏目，覆盖 AI 开发学习的完整闭环</p>
       </div>
-      <span class="hidden text-sm text-slate-500 sm:block">按你的需求点进去即可</span>
+      <span class="hidden text-sm text-[var(--text-3)] sm:block">按你的需求点进去即可</span>
     </div>
 
     <div class="grid auto-rows-fr grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6">
       {columns.map((c) => (
-        <a
-          href={c.href}
-          class:list={[
-            'card-lift card-glow accent-top group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 backdrop-blur-sm',
-            c.span,
-          ]}
-        >
-          <!-- 顶部渐变胶囊 -->
-          <span class={`inline-flex w-fit rounded-full bg-gradient-to-r ${c.grad} px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-md`}>
-            {c.count}
-          </span>
+        <a href={c.href} class:list={['card card-lift group flex flex-col p-6', c.span]}>
+          <div class="flex items-center justify-between gap-3">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface-2)] text-[var(--accent-text)]">
+              <Icon name={c.icon} class="h-[18px] w-[18px]" />
+            </span>
+            <span class="badge">{c.count}</span>
+          </div>
 
-          <h3 class="relative z-10 mt-4 text-lg font-semibold text-slate-100 transition group-hover:text-indigo-300">
+          <h3 class="mt-4 text-lg font-semibold text-[var(--text-1)] transition group-hover:text-[var(--accent-text)]">
             {c.title}
           </h3>
-          <p class="relative z-10 mt-1 text-sm leading-relaxed text-slate-400">{c.desc}</p>
+          <p class="mt-1 text-sm leading-relaxed text-[var(--text-2)]">{c.desc}</p>
 
-          <!-- 内容化预览（替代图标） -->
-          <div class="relative z-10 mt-auto pt-5">
+          <!-- 内容化预览 -->
+          <div class="mt-auto pt-5">
             {c.previewType === 'docs' && (
               <div class="space-y-3">
                 <div class="flex flex-wrap gap-2">
                   {docsByCategory.slice(0, 5).map(([cat, count]) => (
-                    <span class="rounded-lg bg-white/[0.05] px-2 py-1 text-xs text-slate-400 ring-1 ring-white/[0.06]">
-                      {cat} <span class="text-indigo-300">{count}</span>
+                    <span class="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-xs text-[var(--text-2)]">
+                      {cat} <span class="text-[var(--accent-text)]">{count}</span>
                     </span>
                   ))}
                 </div>
-                <span class="inline-flex items-center text-xs font-medium text-indigo-300 transition group-hover:translate-x-0.5">
-                  浏览全部文档 →
-                </span>
+                <span class="inline-flex items-center text-xs font-medium text-[var(--accent-text)]">浏览全部文档 →</span>
               </div>
             )}
 
@@ -214,27 +190,27 @@ const diffColor: Record<string, string> = {
               <div class="space-y-3">
                 <div class="flex flex-wrap gap-2">
                   {toolPreviewNames.map((name) => (
-                    <span class="rounded-lg bg-white/[0.05] px-2 py-1 text-xs text-slate-300 ring-1 ring-white/[0.06]">{name}</span>
+                    <span class="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-xs text-[var(--text-2)]">{name}</span>
                   ))}
                 </div>
-                <span class="inline-flex items-center text-xs font-medium text-indigo-300">查看工具大全 →</span>
+                <span class="inline-flex items-center text-xs font-medium text-[var(--accent-text)]">查看工具大全 →</span>
               </div>
             )}
 
             {c.previewType === 'info' && (
               <div class="space-y-2">
                 {infoPreview.map((item) => (
-                  <p class="truncate text-xs text-slate-400">
-                    <span class="text-indigo-300">·</span> {item.data.title}
+                  <p class="truncate text-xs text-[var(--text-2)]">
+                    <span class="text-[var(--accent-text)]">·</span> {item.data.title}
                   </p>
                 ))}
-                <span class="inline-flex items-center text-xs font-medium text-indigo-300">阅读最新资讯 →</span>
+                <span class="inline-flex items-center text-xs font-medium text-[var(--accent-text)]">阅读最新资讯 →</span>
               </div>
             )}
 
             {c.previewType === 'faq' && (
               <div class="space-y-3">
-                <div class="flex items-center gap-3 text-xs text-slate-400">
+                <div class="flex items-center gap-3 text-xs text-[var(--text-2)]">
                   <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>入门 {Math.round((faqDiff['入门'] / faqTotal) * 100)}%</span>
                   <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>进阶 {Math.round((faqDiff['进阶'] / faqTotal) * 100)}%</span>
                   <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-rose-400"></span>高级 {Math.round((faqDiff['高级'] / faqTotal) * 100)}%</span>
@@ -244,7 +220,7 @@ const diffColor: Record<string, string> = {
                   <span class="bg-amber-400" style={`width:${(faqDiff['进阶'] / faqTotal) * 100}%`}></span>
                   <span class="bg-rose-400" style={`width:${(faqDiff['高级'] / faqTotal) * 100}%`}></span>
                 </div>
-                <span class="inline-flex items-center text-xs font-medium text-indigo-300">去刷题 →</span>
+                <span class="inline-flex items-center text-xs font-medium text-[var(--accent-text)]">去刷题 →</span>
               </div>
             )}
 
@@ -253,12 +229,12 @@ const diffColor: Record<string, string> = {
                 <div class="stage-progress max-w-[14rem]">
                   {roadmaps.map((r, i) => (
                     <>
-                      <span class="dot active" style={`box-shadow: 0 0 8px ${roadmapGrads[r.id].includes('f59e0b') ? 'rgba(245,158,11,0.55)' : 'rgba(34,211,238,0.55)'}`}></span>
+                      <span class="dot active"></span>
                       {i < roadmaps.length - 1 && <span class="bar active"></span>}
                     </>
                   ))}
                 </div>
-                <span class="inline-flex items-center text-xs font-medium text-indigo-300">选择路线开始学习 →</span>
+                <span class="inline-flex items-center text-xs font-medium text-[var(--accent-text)]">选择路线开始学习 →</span>
               </div>
             )}
           </div>
@@ -271,29 +247,26 @@ const diffColor: Record<string, string> = {
   <section class="mt-16">
     <div class="mb-7 flex items-center justify-between">
       <h2 class="section-title text-2xl font-bold">学习路线速览</h2>
-      <a href="/roadmap" class="text-sm font-medium text-indigo-300 transition hover:text-indigo-200">全部路线 →</a>
+      <a href="/roadmap" class="text-sm font-medium text-[var(--accent-text)] transition hover:text-indigo-200">全部路线 →</a>
     </div>
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {roadmaps.map((r) => (
-        <a
-          href={`/roadmap/${r.id}`}
-          class="card-lift card-glow accent-top group flex flex-col rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 backdrop-blur-sm"
-        >
+        <a href={`/roadmap/${r.id}`} class="card card-lift group flex flex-col p-5">
           <div class="flex items-start justify-between gap-3">
-            <h3 class="font-semibold text-slate-100 transition group-hover:text-indigo-300">{r.data.title}</h3>
-            <span class="shrink-0 rounded-full bg-white/[0.06] px-2.5 py-1 text-xs text-slate-400">{r.data.duration}</span>
+            <h3 class="font-semibold text-[var(--text-1)] transition group-hover:text-[var(--accent-text)]">{r.data.title}</h3>
+            <span class="badge shrink-0">{r.data.duration}</span>
           </div>
-          <p class="mt-2 line-clamp-2 text-sm text-slate-400">{r.data.target}</p>
+          <p class="mt-2 line-clamp-2 text-sm text-[var(--text-2)]">{r.data.target}</p>
 
           <div class="mt-4 flex items-center gap-1.5">
             {r.data.stages.map((_, idx) => (
               <>
-                <span class="h-2 w-2 rounded-full" style={`background:${roadmapGrads[r.id]}`}></span>
+                <span class="h-2 w-2 rounded-full bg-[var(--accent)] opacity-70"></span>
                 {idx < r.data.stages.length - 1 && <span class="h-0.5 w-3 rounded-full bg-white/10"></span>}
               </>
             ))}
           </div>
-          <p class="mt-3 text-xs text-slate-500">{r.data.stages.length} 阶段 · {r.data.stages.reduce((n, s) => n + s.tasks.length, 0)} 个任务</p>
+          <p class="mt-3 text-xs text-[var(--text-3)]">{r.data.stages.length} 阶段 · {r.data.stages.reduce((n, s) => n + s.tasks.length, 0)} 个任务</p>
         </a>
       ))}
     </div>
@@ -304,24 +277,19 @@ const diffColor: Record<string, string> = {
     <section class="mt-16">
       <div class="mb-7 flex items-center justify-between">
         <h2 class="section-title text-2xl font-bold">精选工具</h2>
-        <a href="/tools" class="text-sm font-medium text-indigo-300 transition hover:text-indigo-200">工具大全 →</a>
+        <a href="/tools" class="text-sm font-medium text-[var(--accent-text)] transition hover:text-indigo-200">工具大全 →</a>
       </div>
       <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {featuredTools.map((t) => (
-          <a
-            href={t.data.url}
-            target="_blank"
-            rel="noopener"
-            class="card-lift card-glow group flex flex-col rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 backdrop-blur-sm"
-          >
+          <a href={t.data.url} target="_blank" rel="noopener" class="card card-lift group flex flex-col p-5">
             <div class="flex items-center justify-between gap-2">
-              <h3 class="font-semibold text-slate-100 transition group-hover:text-indigo-300">{t.data.title}</h3>
-              <span class={`shrink-0 rounded-md px-2 py-0.5 text-xs font-medium ${freeColor[t.data.free] ?? 'bg-white/[0.06] text-slate-400'}`}>{t.data.free}</span>
+              <h3 class="font-semibold text-[var(--text-1)] transition group-hover:text-[var(--accent-text)]">{t.data.title}</h3>
+              <span class={`shrink-0 text-xs font-medium ${freeColor[t.data.free] ?? 'text-[var(--text-3)]'}`}>{t.data.free}</span>
             </div>
-            <p class="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-slate-400">{t.data.description}</p>
+            <p class="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-[var(--text-2)]">{t.data.description}</p>
             <div class="mt-3 flex items-center justify-between">
-              <span class="rounded bg-indigo-500/15 px-2 py-0.5 text-xs font-medium text-indigo-300">{t.data.category}</span>
-              <span class="text-xs font-medium text-indigo-300 opacity-0 transition group-hover:opacity-100">访问 ↗</span>
+              <span class="badge">{t.data.category}</span>
+              <span class="text-xs font-medium text-[var(--accent-text)] opacity-0 transition group-hover:opacity-100">访问 ↗</span>
             </div>
           </a>
         ))}
@@ -334,24 +302,21 @@ const diffColor: Record<string, string> = {
     <section class="mt-16">
       <div class="mb-7 flex items-center justify-between">
         <h2 class="section-title text-2xl font-bold">高频面试题</h2>
-        <a href="/faq" class="text-sm font-medium text-indigo-300 transition hover:text-indigo-200">题库大全 →</a>
+        <a href="/faq" class="text-sm font-medium text-[var(--accent-text)] transition hover:text-indigo-200">题库大全 →</a>
       </div>
       <div class="grid gap-3 md:grid-cols-2">
         {featuredFaq.map((q) => (
-          <a
-            href={`/faq/${q.id}/`}
-            class="card-lift card-glow group flex flex-col rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 backdrop-blur-sm"
-          >
+          <a href={`/faq/${q.id}/`} class="card card-lift group flex flex-col p-5">
             <div class="flex items-start gap-2.5">
-              <span class={`mt-0.5 shrink-0 rounded-md px-2 py-0.5 text-xs font-medium ${diffColor[q.data.difficulty] ?? 'bg-white/[0.06] text-slate-400'}`}>
+              <span class={`mt-0.5 shrink-0 text-xs font-medium ${diffColor[q.data.difficulty] ?? 'text-[var(--text-3)]'}`}>
                 {q.data.difficulty}
               </span>
-              <h3 class="font-semibold leading-snug text-slate-100 transition group-hover:text-indigo-300">{q.data.title}</h3>
+              <h3 class="font-semibold leading-snug text-[var(--text-1)] transition group-hover:text-[var(--accent-text)]">{q.data.title}</h3>
             </div>
-            <p class="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-slate-400">{q.data.answer}</p>
+            <p class="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-[var(--text-2)]">{q.data.answer}</p>
             <div class="mt-3 flex items-center justify-between">
-              <span class="rounded bg-white/[0.06] px-2 py-0.5 text-xs text-slate-400">{q.data.category}</span>
-              <span class="text-xs font-medium text-indigo-300 opacity-0 transition group-hover:opacity-100">查看详解 →</span>
+              <span class="badge">{q.data.category}</span>
+              <span class="text-xs font-medium text-[var(--accent-text)] opacity-0 transition group-hover:opacity-100">查看详解 →</span>
             </div>
           </a>
         ))}
@@ -362,8 +327,8 @@ const diffColor: Record<string, string> = {
   <!-- ============ 如何使用本站 ============ -->
   <section class="mt-16">
     <div class="mb-7 text-center">
-      <h2 class="section-title mx-auto inline-block text-2xl font-bold">如何使用本站</h2>
-      <p class="mx-auto mt-4 max-w-xl text-slate-400">三步把本站变成你的 AI 学习加速器</p>
+      <h2 class="text-2xl font-bold">如何使用本站</h2>
+      <p class="mx-auto mt-3 max-w-xl text-[var(--text-2)]">三步把本站变成你的 AI 学习加速器</p>
     </div>
     <div class="grid gap-4 md:grid-cols-3">
       {[
@@ -371,9 +336,9 @@ const diffColor: Record<string, string> = {
         { title: '追资讯 · 学知识', desc: '每天看看最新行业动态与技术前沿，保持信息不落后。' },
         { title: '刷题库 · 跟路线', desc: '对照学习路线图按阶段推进，用面试题检验掌握程度。' },
       ].map((s) => (
-        <div class="card-glow accent-top rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 text-center">
-          <h3 class="font-semibold text-slate-100">{s.title}</h3>
-          <p class="mt-2 text-sm leading-relaxed text-slate-400">{s.desc}</p>
+        <div class="card p-6 text-center">
+          <h3 class="font-semibold text-[var(--text-1)]">{s.title}</h3>
+          <p class="mt-2 text-sm leading-relaxed text-[var(--text-2)]">{s.desc}</p>
         </div>
       ))}
     </div>
@@ -383,18 +348,18 @@ const diffColor: Record<string, string> = {
   <section class="mt-16">
     <div class="mb-5 flex items-center justify-between">
       <h2 class="section-title text-2xl font-bold">最新资讯</h2>
-      <a href="/info" class="text-sm font-medium text-indigo-300 transition hover:text-indigo-200">查看全部 →</a>
+      <a href="/info" class="text-sm font-medium text-[var(--accent-text)] transition hover:text-indigo-200">查看全部 →</a>
     </div>
-    <div class="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm">
+    <div class="card overflow-hidden p-0">
       {info.map((item, i) => (
         <a
           href={`/info/${item.id}/`}
-          class:list={['flex items-start gap-3 px-5 py-4 transition hover:bg-indigo-500/[0.08]', i !== 0 && 'border-t border-white/[0.06]']}
+          class:list={['flex items-start gap-3 px-5 py-4 transition hover:bg-white/[0.03]', i !== 0 && 'border-t border-[var(--border)]']}
         >
-          <span class="mt-0.5 shrink-0 rounded-md bg-indigo-500/15 px-2 py-0.5 text-xs font-medium text-indigo-300">{item.data.category}</span>
+          <span class="badge mt-0.5 shrink-0">{item.data.category}</span>
           <div class="min-w-0">
-            <p class="font-medium leading-snug text-slate-200 transition hover:text-indigo-300">{item.data.title}</p>
-            <p class="mt-1 text-sm text-slate-500">{item.data.source} · {item.data.date.toLocaleDateString('zh-CN')}</p>
+            <p class="font-medium leading-snug text-[var(--text-1)]">{item.data.title}</p>
+            <p class="mt-1 text-sm text-[var(--text-3)]">{item.data.source} · {item.data.date.toLocaleDateString('zh-CN')}</p>
           </div>
         </a>
       ))}

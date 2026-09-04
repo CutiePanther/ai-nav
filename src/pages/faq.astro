@@ -1,56 +1,169 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import Icon from '../components/Icon.astro';
 import { getCollection } from 'astro:content';
 
 const faq = await getCollection('faq');
 
+const catIcon: Record<string, string> = {
+  大模型: 'cpu',
+  机器学习: 'trending-up',
+  深度学习: 'layers',
+  工程系统: 'settings',
+  AI八股文: 'book',
+  计算机基础: 'server',
+};
+
 const categories = [...new Set(faq.map((f) => f.data.category))];
-const grouped = categories.map((cat) => ({
-  cat,
-  items: faq.filter((f) => f.data.category === cat),
-}));
+const catCount = (cat: string) => faq.filter((f) => f.data.category === cat).length;
+
+const difficulties = ['入门', '进阶', '高级'];
+
+// 聚合高频标签（出现 >=2 次，按频次降序取前 18 个）
+const tagFreq = new Map<string, number>();
+faq.forEach((f) => f.data.tags.forEach((t) => tagFreq.set(t, (tagFreq.get(t) ?? 0) + 1)));
+const hotTags = [...tagFreq.entries()]
+  .filter(([, n]) => n >= 2)
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 18)
+  .map(([t]) => t);
 
 const diffColor: Record<string, string> = {
-  入门: 'bg-green-50 text-green-700',
-  进阶: 'bg-amber-50 text-amber-700',
-  高级: 'bg-red-50 text-red-600',
+  入门: 'text-emerald-400',
+  进阶: 'text-amber-400',
+  高级: 'text-rose-400',
 };
+
+const ACTIVE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--accent)] px-3.5 py-1.5 text-sm font-medium text-white transition';
+const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--surface)] px-3.5 py-1.5 text-sm text-[var(--text-2)] ring-1 ring-[var(--border)] transition hover:text-[var(--accent-text)] hover:ring-[var(--border-strong)]';
 ---
 
-<Layout title="精选面试题" description="大模型、机器学习、深度学习、工程系统的高频面试题精选集">
-  <h1 class="text-2xl font-bold">精选面试题</h1>
-  <p class="mt-2 text-gray-500">
-    精选集起步：高频题 + 原创要点 + 参考外链（LeetCode / 牛客 / CodeTop），暂不自建判题。
-  </p>
+<Layout title="精选面试题" description="大模型、机器学习、深度学习、工程系统、AI 八股文与计算机基础的高频面试题精选集">
+  <header class="mb-6">
+    <h1 class="text-3xl font-bold sm:text-4xl">精选面试题</h1>
+    <p class="mt-3 max-w-2xl text-[var(--text-2)]">
+      共 {faq.length} 道高频题，按分类、难度、标签筛选，点卡片查看结构化详解。
+    </p>
+  </header>
 
-  {grouped.map(({ cat, items }) => (
-    <section class="mt-8">
-      <h2 class="mb-3 text-lg font-semibold text-indigo-600">{cat}</h2>
-      <div class="space-y-4">
-        {items.map((q) => (
-          <div class="rounded-xl border border-gray-200 bg-white p-5">
-            <div class="flex items-start gap-3">
-              <span class={`mt-0.5 shrink-0 rounded px-2 py-0.5 text-xs ${diffColor[q.data.difficulty] ?? 'bg-gray-100 text-gray-600'}`}>
-                {q.data.difficulty}
-              </span>
-              <a href={`/faq/${q.id}/`} class="font-semibold leading-snug hover:text-indigo-600">{q.data.title}</a>
-            </div>
-            <div class="mt-3 rounded-lg bg-gray-50 p-4 text-sm leading-relaxed text-gray-700">
-              {q.data.answer}
-            </div>
-            {q.data.refs.length > 0 && (
-              <div class="mt-3 flex flex-wrap items-center gap-2 text-sm">
-                <span class="text-gray-400">参考：</span>
-                {q.data.refs.map((r) => (
-                  <a href={r.url} target="_blank" rel="noopener" class="text-indigo-600 hover:underline">
-                    {r.label} ↗
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
+  <!-- 筛选栏 -->
+  <div class="sticky top-16 z-20 -mx-4 mb-6 bg-[#0b0c0f]/90 px-4 py-3 backdrop-blur sm:top-[68px]">
+    <div class="flex flex-col gap-2.5">
+      <!-- 分类 -->
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="w-12 shrink-0 text-xs font-medium text-[var(--text-3)]">分类</span>
+        <button data-kind="cat" data-filter="all" class={ACTIVE}>全部</button>
+        {categories.map((c) => (
+          <button data-kind="cat" data-filter={c} class={IDLE}>
+            <Icon name={catIcon[c] ?? 'circle'} size={14} />{c}
+            <span class="text-xs opacity-70">{catCount(c)}</span>
+          </button>
         ))}
       </div>
-    </section>
-  ))}
+      <!-- 难度 -->
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="w-12 shrink-0 text-xs font-medium text-[var(--text-3)]">难度</span>
+        <button data-kind="diff" data-filter="all" class={ACTIVE}>不限</button>
+        {difficulties.map((d) => (
+          <button data-kind="diff" data-filter={d} class={IDLE}>{d}</button>
+        ))}
+      </div>
+      <!-- 标签 -->
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="w-12 shrink-0 text-xs font-medium text-[var(--text-3)]">标签</span>
+        <button data-kind="tag" data-filter="__clear__" class="clear-tags inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm text-[var(--text-3)] ring-1 ring-[var(--border)] transition hover:text-[var(--accent-text)] hover:ring-[var(--border-strong)]">
+          <Icon name="settings" size={13} />清空
+        </button>
+        {hotTags.map((t) => (
+          <button data-kind="tag" data-filter={t} class={IDLE}>#{t}</button>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <!-- 题库卡片 -->
+  <div id="faq-grid" class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+    {faq.map((q) => (
+      <a
+        href={`/faq/${q.id}/`}
+        data-category={q.data.category}
+        data-difficulty={q.data.difficulty}
+        data-tags={JSON.stringify(q.data.tags)}
+        class="faq-card card card-lift group flex flex-col p-5"
+      >
+        <div class="flex items-start gap-2.5">
+          <span class={`mt-0.5 shrink-0 text-xs font-medium ${diffColor[q.data.difficulty] ?? 'text-[var(--text-3)]'}`}>
+            {q.data.difficulty}
+          </span>
+          <span class="badge mt-0.5 shrink-0">{q.data.category}</span>
+          <h3 class="font-semibold leading-snug text-[var(--text-1)] transition group-hover:text-[var(--accent-text)]">{q.data.title}</h3>
+        </div>
+        <p class="mt-3 line-clamp-2 flex-1 text-sm leading-relaxed text-[var(--text-2)]">{q.data.answer}</p>
+        <div class="mt-3 flex items-center justify-between">
+          <span class="flex flex-wrap gap-1">
+            {q.data.tags.slice(0, 2).map((t) => (
+              <span class="rounded bg-[var(--surface-2)] px-1.5 py-0.5 text-xs text-[var(--text-2)]">#{t}</span>
+            ))}
+          </span>
+          <span class="text-xs font-medium text-[var(--accent-text)] opacity-0 transition group-hover:opacity-100">详情 →</span>
+        </div>
+      </a>
+    ))}
+  </div>
+
+  <!-- 空状态 -->
+  <div id="faq-empty" class="card mt-8 hidden p-12 text-center">
+    <p class="text-[var(--text-2)]">没有匹配的题目，试试放宽筛选条件。</p>
+  </div>
 </Layout>
+
+<script>
+  const state = { cat: 'all', diff: 'all', tags: new Set() };
+  const cards = Array.from(document.querySelectorAll('.faq-card'));
+  const empty = document.getElementById('faq-empty');
+  const ACTIVE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--accent)] px-3.5 py-1.5 text-sm font-medium text-white transition';
+  const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--surface)] px-3.5 py-1.5 text-sm text-[var(--text-2)] ring-1 ring-[var(--border)] transition hover:text-[var(--accent-text)] hover:ring-[var(--border-strong)]';
+
+  function apply() {
+    let visible = 0;
+    cards.forEach((card) => {
+      const cCat = card.dataset.category;
+      const cDiff = card.dataset.difficulty;
+      const cTags = JSON.parse(card.dataset.tags || '[]');
+      const okCat = state.cat === 'all' || cCat === state.cat;
+      const okDiff = state.diff === 'all' || cDiff === state.diff;
+      const okTag = state.tags.size === 0 || cTags.some((t) => state.tags.has(t));
+      const show = okCat && okDiff && okTag;
+      card.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    empty.classList.toggle('hidden', visible > 0);
+  }
+
+  document.querySelectorAll('.filter-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const kind = chip.dataset.kind;
+      const f = chip.dataset.filter;
+      if (kind === 'cat') {
+        state.cat = f;
+        document.querySelectorAll('[data-kind="cat"]').forEach((c) => c.className = c.dataset.filter === f ? ACTIVE : IDLE);
+      } else if (kind === 'diff') {
+        state.diff = f;
+        document.querySelectorAll('[data-kind="diff"]').forEach((c) => c.className = c.dataset.filter === f ? ACTIVE : IDLE);
+      } else if (kind === 'tag') {
+        if (f === '__clear__') {
+          state.tags.clear();
+          document.querySelectorAll('[data-kind="tag"]').forEach((c) => c.className = IDLE);
+        } else {
+          if (state.tags.has(f)) state.tags.delete(f);
+          else state.tags.add(f);
+          document.querySelectorAll('[data-kind="tag"]').forEach((c) => {
+            if (c.dataset.filter === '__clear__') return;
+            c.className = state.tags.has(c.dataset.filter) ? ACTIVE : IDLE;
+          });
+        }
+      }
+      apply();
+    });
+  });
+</script>

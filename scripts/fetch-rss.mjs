@@ -13,6 +13,7 @@ import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import crypto from 'node:crypto';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const INFO_DIR = path.resolve(__dirname, '../src/content/info');
@@ -31,6 +32,30 @@ const SOURCES = [
     category: '技术前沿',
     max: 3,
     cleanSummary: true, // arXiv 摘要需清理噪声前缀
+  },
+  {
+    url: 'https://www.qbitai.com/feed',
+    source: '量子位',
+    category: '行业快讯',
+    max: 6,
+  },
+  {
+    url: 'https://www.jiqizhixin.com/rss',
+    source: '机器之心',
+    category: '技术深度',
+    max: 6,
+  },
+  {
+    url: 'https://huggingface.co/blog/feed.xml',
+    source: 'HuggingFace Blog',
+    category: '技术前沿',
+    max: 4,
+  },
+  {
+    url: 'https://openai.com/blog/rss.xml',
+    source: 'OpenAI Blog',
+    category: '技术前沿',
+    max: 3,
   },
 ];
 
@@ -51,13 +76,13 @@ async function loadExistingTitles() {
   return titles;
 }
 
-// 生成 markdown 文件名（用标题 slug 化 + 时间戳兜底）
-function slugify(str) {
-  return str
-    .toLowerCase()
-    .replace(/[^\w\u4e00-\u9fa5]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 40);
+// 生成 markdown 文件名：YYYY-MM-DD-<标题 md5 前 12 位>
+// 纯 ASCII 文件名，跨平台 URL 友好，同一标题恒定输出（幂等，去重靠标题文本不靠文件名）
+function filenameFor(title, dateStr) {
+  const d = dateStr ? new Date(dateStr) : new Date();
+  const datePart = isNaN(d.getTime()) ? new Date().toISOString().slice(0, 10) : d.toISOString().slice(0, 10);
+  const hash = crypto.createHash('md5').update(title).digest('hex').slice(0, 12);
+  return `${datePart}-${hash}.md`;
 }
 
 function escapeYaml(s) {
@@ -87,7 +112,7 @@ async function main() {
         }
         summary = summary.slice(0, 200);
         const date = item.isoDate ?? item.pubDate ?? new Date().toISOString();
-        const filename = `${slugify(title) || Date.now()}.md`;
+        const filename = filenameFor(title, date);
 
         // 分类推断：arxiv 归技术前沿，其余按配置
         const category = src.category;

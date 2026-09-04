@@ -1,0 +1,43 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ChatWidget from '../components/ChatWidget.astro';
+import { getCollection } from 'astro:content';
+import { roadmaps } from '../data/roadmaps';
+
+const faqCount = (await getCollection('faq')).length;
+const roadmapCount = roadmaps.length;
+---
+
+<Layout title="AI 助手" description="基于站内题库与学习路线的 AI 学习助手，带引用回答你的 AI 开发学习问题" floatingAI={false}>
+  <div class="mx-auto max-w-3xl">
+    <!-- 页头 -->
+    <header class="mb-8">
+      <span class="inline-flex items-center gap-1.5 rounded-full border border-white/[0.12] bg-white/[0.04] px-3 py-1 text-xs font-medium text-slate-300">
+        <span class="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.9)]"></span>
+        AI 学习助手 · 站内知识库
+      </span>
+      <h1 class="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">问 AI 助手</h1>
+      <p class="mt-3 text-slate-400">
+        基于站内 <strong class="text-slate-200">{faqCount} 道面试题</strong> 与 <strong class="text-slate-200">{roadmapCount} 条学习路线</strong> 作答，
+        每个结论都带引用、可跳转原文，答不上的会如实说「暂无」。
+      </p>
+    </header>
+
+    <!-- 聊天组件（内嵌形态） -->
+    <ChatWidget mode="inline" />
+
+    <!-- 能力说明 -->
+    <div class="mt-10 grid gap-3 sm:grid-cols-3">
+      {[
+        { title: '引用可溯源', desc: '回答标注 [ref:N]，点击跳转对应题库/路线原文。' },
+        { title: '只答站内内容', desc: '不编造、不引入外部知识，站内没有的明确说「暂无」。' },
+        { title: '覆盖学习闭环', desc: '从概念题到「怎么学」的路径问题都能答。' },
+      ].map((f) => (
+        <div class="card-glow accent-top rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
+          <h3 class="font-semibold text-slate-100">{f.title}</h3>
+          <p class="mt-2 text-sm leading-relaxed text-slate-400">{f.desc}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</Layout>

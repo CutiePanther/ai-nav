@@ -11,7 +11,7 @@
     "prebuild": "node scripts/fetch-rss.mjs",
     "build": "astro build",
     "index": "pagefind --site dist",
-    "postbuild": "pagefind --site dist && node scripts/gen-sitemap.mjs",
+    "postbuild": "pagefind --site dist && node scripts/gen-sitemap.mjs && node scripts/gen-rss.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },

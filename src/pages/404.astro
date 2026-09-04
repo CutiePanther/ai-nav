@@ -1,0 +1,44 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { roadmaps } from '../data/roadmaps';
+
+const links = [
+  { href: '/', label: '首页' },
+  { href: '/docs', label: '官方文档' },
+  { href: '/tools', label: 'AI 工具' },
+  { href: '/info', label: '最新资讯' },
+  { href: '/faq', label: '面试题库' },
+  { href: '/roadmap', label: '学习路线' },
+];
+---
+
+<Layout title="页面不存在" description="您访问的页面不存在或已迁移">
+  <section class="mx-auto max-w-2xl py-16 text-center sm:py-24">
+    <p class="bg-grad text-grad text-7xl font-bold tracking-tight sm:text-8xl">404</p>
+    <h1 class="mt-6 text-2xl font-bold sm:text-3xl">页面不存在</h1>
+    <p class="mt-3 text-slate-400">
+      您访问的页面可能已迁移、删除，或从未存在。试试从下方入口重新出发。
+    </p>
+
+    <div class="mt-10 flex flex-wrap items-center justify-center gap-3">
+      {links.map((l) => (
+        <a
+          href={l.href}
+          class="rounded-xl border border-white/[0.14] bg-white/[0.06] px-4 py-2 text-sm font-medium text-slate-100 backdrop-blur-sm transition hover:border-indigo-400/40 hover:text-indigo-200"
+        >
+          {l.label}
+        </a>
+      ))}
+    </div>
+
+    <div class="mt-12 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 text-left">
+      <p class="text-sm font-semibold text-slate-200">不知道从哪开始？</p>
+      <p class="mt-2 text-sm leading-relaxed text-slate-400">
+        试试从「学习路线」入手——按方向分 {roadmaps.length} 条路径，每条带阶段任务与检验标准，拿到就能照着学。
+      </p>
+      <a href="/roadmap" class="mt-3 inline-flex text-sm font-medium text-indigo-300 transition hover:text-indigo-200">
+        查看学习路线 →
+      </a>
+    </div>
+  </section>
+</Layout>

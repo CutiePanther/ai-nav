@@ -22,16 +22,17 @@ const formattedDate = date.toLocaleDateString('zh-CN', {
 
 <Layout title={title} description={summary}>
   <article class="mx-auto max-w-3xl">
-    <a href="/info" class="inline-flex items-center gap-1 text-sm font-medium text-[var(--text-2)] transition hover:text-[var(--accent-text)]">← 返回资讯</a>
+    <a href="/info" class="font-mono text-xs tracking-[0.12em] text-[var(--text-2)] transition hover:text-[var(--hal-text)]">← 返回资讯</a>
 
-    <div class="mt-4 flex items-center gap-2 text-xs">
+    <div class="mt-4 flex items-center gap-2">
       <span class="badge">{category}</span>
-      <span class="text-[var(--text-3)]">{source}</span>
-      <span class="text-[var(--text-3)]">·</span>
-      <time class="text-[var(--text-3)]" datetime={date.toISOString()}>{formattedDate}</time>
+      <span class="font-mono text-[11px] tracking-[0.06em] text-[var(--text-3)]">
+        {source} ·
+        <time datetime={date.toISOString()}>{formattedDate}</time>
+      </span>
     </div>
 
-    <h1 class="mt-4 text-2xl font-bold leading-snug text-[var(--text-1)] sm:text-3xl">{title}</h1>
+    <h1 class="font-display mt-4 text-2xl font-medium leading-snug tracking-[0.08em] text-[var(--text-1)] sm:text-3xl">{title}</h1>
 
     <div class="card mt-6 p-6 sm:p-8">
       <p class="text-base leading-relaxed text-[var(--text-2)]">{summary}</p>
@@ -48,7 +49,7 @@ const formattedDate = date.toLocaleDateString('zh-CN', {
 
     {tags.length > 0 && (
       <div class="mt-8 flex flex-wrap gap-1.5">
-        {tags.map((t) => <span class="rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-xs text-[var(--text-2)]">#{t}</span>)}
+        {tags.map((t) => <span class="badge">#{t}</span>)}
       </div>
     )}
   </article>

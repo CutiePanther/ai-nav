@@ -1,38 +1,48 @@
 @import "tailwindcss";
+@import "@fontsource-variable/jost";
 
 /*
- * 设计系统：Editorial Dark（参考 Linear / Vercel）
- * 原则：
- *   1. 单一 accent（indigo 色阶重定义为品牌蓝 #5E6AD2 系）
- *   2. 层级靠亮度阶梯 + 边框透明度 + 留白，不靠多色渐变
- *   3. 无发光、无渐变文字、无背景光晕
+ * 设计系统：A Space Odyssey（2001 太空漫游）
+ *
+ * 三色纪律 —— 深黑虚空 / 纯白 / 唯一的饱和红（HAL 9000）
+ * 矩形纪律 —— 巨石般的完美矩形，圆角近乎归零，8px 网格
+ * 仪表排印 —— 等宽字体标签与读数、宽字距、无装饰
+ * 红色只给有理由的元素：active 态、HAL 之眼、关键 CTA、帧编号
  */
 
 @theme {
-  /* 品牌蓝（Linear 式），覆盖 Tailwind indigo 默认色阶 */
-  --color-indigo-200: #c7cdfb;
-  --color-indigo-300: #a5b0fa;
-  --color-indigo-400: #7d89f7;
-  --color-indigo-500: #5e6ad2;
-  --color-indigo-600: #4f5ac2;
+  /* 标题卡字体：Jost（Futura 几何无衬线，2001 的字体语言） */
+  --font-display: "Jost Variable", "PingFang SC", "Microsoft YaHei", sans-serif;
 
-  /* 功能色（仅用于状态语义：难度/价格，不做装饰） */
+  /* HAL 红阶（indigo 键同步重定义，页面残留的 indigo-* 引用自动红化） */
+  --color-indigo-200: #ffc2b5;
+  --color-indigo-300: #ff9a85;
+  --color-indigo-400: #f4603f;
+  --color-indigo-500: #e8452e;
+  --color-indigo-600: #c9371f;
+
+  /* 功能色（仅状态语义：难度/价格） */
   --color-ok: #34d399;
   --color-warn: #fbbf24;
   --color-danger: #f87171;
 }
 
 :root {
-  --bg: #0b0c0f;
-  --surface: rgba(255, 255, 255, 0.025);
+  /* 虚空黑：更深、中性、无蓝调 */
+  --bg: #050607;
+  --surface: rgba(255, 255, 255, 0.02);
   --surface-2: rgba(255, 255, 255, 0.05);
   --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
-  --text-1: #f2f3f5;
-  --text-2: #9ca3af;
-  --text-3: #6b7280;
-  --accent: #5e6ad2;
-  --accent-text: #a5b0fa;
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --text-1: #f5f6f7;
+  --text-2: #9aa0a6;
+  --text-3: #63686d;
+  --hal: #e8452e;
+  --hal-text: #ff8a70;
+  --accent: var(--hal);
+  --accent-text: var(--hal-text);
+  /* 2001 的字体货币：等宽仪表 */
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
 
 html {
@@ -55,21 +65,50 @@ a {
 }
 
 ::selection {
-  background: rgba(94, 106, 210, 0.4);
+  background: rgba(232, 69, 46, 0.45);
   color: #fff;
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--hal);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 1px;
 }
 
-/* ===== 组件类 ===== */
+/* ===== 仪表排印 ===== */
 
-/* 基础卡片：边框 + 面板色，hover 仅提亮边框 */
+/* 等宽仪表标签：小号、宽字距、大写（英文自动、中文拉距） */
+.mono-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--text-3);
+}
+
+/* 帧编号章节头：2001 标题卡语言 —— mono 红色序号 + 展示体标题 */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+.section-index {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--hal);
+  letter-spacing: 0.22em;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+/* ===== 组件类（矩形纪律：圆角 2px） ===== */
+
+/* 巨石面板：静默矩形，hover 仅提亮边框 */
 .card {
-  border-radius: 12px;
+  border-radius: 2px;
   border: 1px solid var(--border);
   background: var(--surface);
   transition: border-color 0.15s ease, background 0.15s ease;
@@ -78,8 +117,6 @@ a {
   border-color: var(--border-strong);
   background: var(--surface-2);
 }
-
-/* 卡片悬浮位移（保留给需要强调的入口卡，去掉发光） */
 .card-lift {
   transition: border-color 0.15s ease, background 0.15s ease;
 }
@@ -88,47 +125,34 @@ a {
   background: var(--surface-2);
 }
 
-/* 章节标题：左侧短 accent 竖条 */
-.section-title {
-  position: relative;
-  padding-left: 14px;
-}
-.section-title::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0.22em;
-  bottom: 0.22em;
-  width: 3px;
-  border-radius: 3px;
-  background: var(--accent);
-}
-
-/* 徽章 */
+/* 徽章：等宽仪表读数 */
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  border-radius: 6px;
+  border-radius: 2px;
   border: 1px solid var(--border);
   background: var(--surface-2);
   padding: 2px 8px;
-  font-size: 12px;
-  line-height: 1.5;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  line-height: 1.6;
   color: var(--text-2);
   white-space: nowrap;
 }
 
-/* 主按钮：纯色 */
+/* 主按钮：HAL 红，矩形 */
 .btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
-  background: var(--accent);
-  padding: 10px 20px;
+  border-radius: 2px;
+  background: var(--hal);
+  padding: 10px 22px;
   font-size: 14px;
   font-weight: 600;
+  letter-spacing: 0.05em;
   color: #fff;
   transition: background 0.15s ease;
 }
@@ -136,26 +160,37 @@ a {
   background: var(--color-indigo-600);
 }
 
-/* 次按钮：描边 */
+/* 次按钮：白描边，矩形 */
 .btn-ghost {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
-  border: 1px solid var(--border);
+  border-radius: 2px;
+  border: 1px solid var(--border-strong);
   background: transparent;
-  padding: 10px 20px;
+  padding: 10px 22px;
   font-size: 14px;
   font-weight: 600;
+  letter-spacing: 0.05em;
   color: var(--text-1);
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 .btn-ghost:hover {
-  border-color: var(--border-strong);
+  border-color: rgba(255, 255, 255, 0.4);
   background: var(--surface-2);
 }
 
-/* 阶段进度点 */
+/* HAL 之眼：红色圆 + 静默外环（仅 AI 语义元素使用） */
+.hal-eye {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--hal);
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px rgba(232, 69, 46, 0.45);
+}
+
+/* 阶段进度：仪表刻度 */
 .stage-progress {
   display: flex;
   align-items: center;
@@ -164,35 +199,31 @@ a {
 .stage-progress .dot {
   width: 7px;
   height: 7px;
-  border-radius: 999px;
+  border-radius: 1px;
   background: rgba(255, 255, 255, 0.15);
   transition: background 0.25s ease;
 }
 .stage-progress .dot.active {
-  background: var(--accent);
+  background: var(--hal);
 }
 .stage-progress .bar {
   flex: 1;
   height: 2px;
   min-width: 12px;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
+  border-radius: 0;
 }
 .stage-progress .bar.active {
-  background: var(--accent);
+  background: var(--hal);
   opacity: 0.6;
 }
 
-/* 难度分布小条 */
+/* 难度分布小条：矩形段 */
 .diff-mini {
   display: flex;
-  height: 5px;
-  border-radius: 999px;
+  height: 4px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.08);
-}
-.diff-mini span {
-  transition: opacity 0.25s ease;
 }
 
 /* 滚动条 */
@@ -202,12 +233,12 @@ a {
 }
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.14);
-  border-radius: 6px;
+  border-radius: 0;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.26);
   background-clip: content-box;
 }
 ::-webkit-scrollbar-track {
@@ -245,7 +276,7 @@ a {
   font-weight: 600;
 }
 .prose-answer a {
-  color: var(--accent-text);
+  color: var(--hal-text);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -255,7 +286,7 @@ a {
   padding-left: 1.4em;
 }
 .prose-answer ul {
-  list-style: disc;
+  list-style: square;
 }
 .prose-answer ol {
   list-style: decimal;
@@ -264,23 +295,23 @@ a {
   margin-top: 0.4em;
 }
 .prose-answer li::marker {
-  color: var(--accent-text);
+  color: var(--hal);
 }
 .prose-answer code {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--mono);
   font-size: 0.875em;
   color: #cbd5e1;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--border);
   padding: 0.1em 0.4em;
-  border-radius: 5px;
+  border-radius: 2px;
 }
 .prose-answer pre {
   margin-top: 0.9em;
   padding: 1em 1.2em;
-  background: #08090c;
+  background: #020304;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 2px;
   overflow-x: auto;
 }
 .prose-answer pre code {
@@ -292,9 +323,8 @@ a {
 .prose-answer blockquote {
   margin-top: 0.9em;
   padding: 0.6em 1em;
-  border-left: 3px solid var(--accent);
+  border-left: 2px solid var(--hal);
   background: var(--surface);
-  border-radius: 0 8px 8px 0;
   color: var(--text-2);
 }
 .prose-answer table {

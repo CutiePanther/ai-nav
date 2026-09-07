@@ -12,10 +12,10 @@ const roadmapCount = (await getCollection('roadmaps')).length;
     <!-- 页头 -->
     <header class="mb-8">
       <span class="badge">
-        <span class="h-1.5 w-1.5 rounded-full bg-[var(--accent)]"></span>
+        <span class="hal-eye h-1.5 w-1.5"></span>
         AI 学习助手 · 站内知识库
       </span>
-      <h1 class="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">问 AI 助手</h1>
+      <h1 class="font-display mt-4 text-3xl font-medium tracking-[0.08em] sm:text-4xl">问 AI 助手</h1>
       <p class="mt-3 text-[var(--text-2)]">
         基于站内 <strong class="text-[var(--text-1)]">{faqCount} 道面试题</strong> 与 <strong class="text-[var(--text-1)]">{roadmapCount} 条学习路线</strong> 作答，
         每个结论都带引用、可跳转原文，答不上的会如实说「暂无」。
@@ -31,10 +31,12 @@ const roadmapCount = (await getCollection('roadmaps')).length;
         { title: '引用可溯源', desc: '回答标注 [ref:N]，点击跳转对应题库/路线原文。' },
         { title: '只答站内内容', desc: '不编造、不引入外部知识，站内没有的明确说「暂无」。' },
         { title: '覆盖学习闭环', desc: '从概念题到「怎么学」的路径问题都能答。' },
-      ].map((f) => (
+      ].map((f, i) => (
         <div class="card p-5">
-          <h3 class="font-semibold text-[var(--text-1)]">{f.title}</h3>
+          <span class="hal-eye h-2.5 w-2.5"></span>
+          <h3 class="font-display mt-3 font-medium tracking-[0.04em] text-[var(--text-1)]">{f.title}</h3>
           <p class="mt-2 text-sm leading-relaxed text-[var(--text-2)]">{f.desc}</p>
+          <p class="mono-label mt-3">CAP {String(i + 1).padStart(2, '0')}</p>
         </div>
       ))}
     </div>

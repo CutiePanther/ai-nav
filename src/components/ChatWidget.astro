@@ -389,22 +389,22 @@ const roadmapCount = (await getCollection('roadmaps')).length;
   .chat-widget .chat-fab {
     width: 56px; height: 56px;
     border-radius: 50%; border: none; cursor: pointer;
-    background: #5e6ad2;
+    background: #e8452e;
     color: white;
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 0 3px #050607, 0 0 0 4px rgba(232, 69, 46, 0.5), 0 8px 24px -8px rgba(0, 0, 0, 0.5);
     transition: background 0.2s;
   }
   .chat-widget .chat-fab:hover {
-    background: #4f5ac2;
+    background: #c9371f;
   }
 
   /* ============ 面板 ============ */
   .chat-widget .chat-panel {
     display: flex; flex-direction: column;
-    border-radius: 14px;
+    border-radius: 2px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    background: #101116;
+    background: #0a0b0d;
     box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.6);
     overflow: hidden;
   }
@@ -438,25 +438,29 @@ const roadmapCount = (await getCollection('roadmaps')).length;
   }
   .chat-widget .chat-head-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
   .chat-widget .chat-head-info { min-width: 0; }
-  .chat-widget .chat-head-title { font-size: 0.95rem; font-weight: 600; color: #e6edf6; line-height: 1.3; }
-  .chat-widget .chat-head-sub { font-size: 11px; color: #7c8db5; line-height: 1.3; margin-top: 1px; }
+  .chat-widget .chat-head-title { font-size: 0.95rem; font-weight: 600; color: #f5f6f7; line-height: 1.3; }
+  .chat-widget .chat-head-sub {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 10px; letter-spacing: 0.1em;
+    color: #8a9096; line-height: 1.3; margin-top: 2px;
+  }
   .chat-widget .chat-head-actions { display: flex; align-items: center; gap: 2px; }
   .chat-widget .chat-icon-btn {
     width: 30px; height: 30px;
     display: flex; align-items: center; justify-content: center;
-    border-radius: 8px; border: none; background: transparent;
-    color: #a3b1c6; cursor: pointer;
+    border-radius: 2px; border: none; background: transparent;
+    color: #9aa0a6; cursor: pointer;
     transition: background 0.2s, color 0.2s;
   }
-  .chat-widget .chat-icon-btn:hover { background: rgba(148, 163, 184, 0.14); color: #e6edf6; }
+  .chat-widget .chat-icon-btn:hover { background: rgba(148, 163, 184, 0.14); color: #f5f6f7; }
 
   /* ============ AI 头像系统 ============ */
   .chat-widget .ai-avatar {
     display: inline-flex; align-items: center; justify-content: center;
     border-radius: 50%; flex-shrink: 0;
-    background: linear-gradient(135deg, #22d3ee, #6366f1);
+    background: #e8452e;
     color: white;
-    box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 0 2px #0a0b0d, 0 0 0 3px rgba(232, 69, 46, 0.5);
     overflow: hidden;
   }
   .chat-widget .ai-avatar svg {
@@ -492,15 +496,15 @@ const roadmapCount = (await getCollection('roadmaps')).length;
   }
   .chat-widget .msg-bubble {
     font-size: 0.925rem; line-height: 1.7; word-break: break-word;
-    border-radius: 14px; padding: 10px 14px;
+    border-radius: 2px; padding: 10px 14px;
   }
   .chat-widget .msg-user .msg-bubble {
-    background: #5e6ad2;
+    background: #e8452e;
     color: white; max-width: 80%;
-    border-bottom-right-radius: 4px;
+    border-bottom-right-radius: 2px;
   }
   .chat-widget .msg-ai .msg-bubble {
-    background: transparent; color: #e6edf6;
+    background: transparent; color: #f5f6f7;
     padding: 0; max-width: 100%;
   }
 
@@ -509,14 +513,14 @@ const roadmapCount = (await getCollection('roadmaps')).length;
     align-self: flex-start;
     display: inline-flex; align-items: center; gap: 4px;
     margin-top: 8px; padding: 3px 8px;
-    border-radius: 6px;
+    border-radius: 2px;
     border: 1px solid rgba(148, 163, 184, 0.2);
-    background: rgba(13, 21, 38, 0.6);
-    color: #a3b1c6; font-size: 11px; cursor: pointer;
+    background: rgba(5, 6, 7, 0.6);
+    color: #9aa0a6; font-size: 11px; cursor: pointer;
     opacity: 0; transition: opacity 0.15s, color 0.2s, border-color 0.2s, background 0.2s;
   }
   .chat-widget .msg-ai:hover .msg-copy { opacity: 1; }
-  .chat-widget .msg-copy:hover { color: #e6edf6; border-color: rgba(99, 102, 241, 0.4); background: rgba(13, 21, 38, 0.9); }
+  .chat-widget .msg-copy:hover { color: #f5f6f7; border-color: rgba(232, 69, 46, 0.45); background: rgba(5, 6, 7, 0.9); }
   .chat-widget .msg-copy.is-copied { color: #34d399; border-color: rgba(52, 211, 153, 0.4); }
 
   /* ============ Markdown 内容样式 ============ */
@@ -531,31 +535,31 @@ const roadmapCount = (await getCollection('roadmaps')).length;
   .chat-widget .answer-text h3 { font-size: 1.08rem; }
   .chat-widget .answer-text h4 { font-size: 1rem; }
   .chat-widget .answer-text strong { color: #fff; }
-  .chat-widget .answer-text em { color: #dbe4f3; }
+  .chat-widget .answer-text em { color: #cbd3da; }
   .chat-widget .answer-text a:not(.ref-badge) {
-    color: #a5b0fa; text-decoration: underline; text-underline-offset: 2px;
+    color: #ff8a70; text-decoration: underline; text-underline-offset: 2px;
   }
-  .chat-widget .answer-text a:not(.ref-badge):hover { color: #c7cdfb; }
+  .chat-widget .answer-text a:not(.ref-badge):hover { color: #ffc2b5; }
   .chat-widget .answer-text ul, .chat-widget .answer-text ol { margin: 0.5em 0; padding-left: 1.5em; }
   .chat-widget .answer-text ul { list-style: disc; }
   .chat-widget .answer-text ol { list-style: decimal; }
   .chat-widget .answer-text li { margin: 0.25em 0; }
   .chat-widget .answer-text code {
     font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
-    font-size: 0.85em; padding: 2px 6px; border-radius: 5px;
-    background: rgba(99, 102, 241, 0.16); color: #c7d2fe;
-    border: 1px solid rgba(99, 102, 241, 0.2);
+    font-size: 0.85em; padding: 2px 6px; border-radius: 2px;
+    background: rgba(232, 69, 46, 0.12); color: #cbd5e1;
+    border: 1px solid rgba(232, 69, 46, 0.18);
   }
   .chat-widget .answer-text pre {
-    margin: 0.7em 0; padding: 12px 14px; border-radius: 10px;
+    margin: 0.7em 0; padding: 12px 14px; border-radius: 2px;
     background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(148, 163, 184, 0.14);
     overflow-x: auto; line-height: 1.55;
   }
-  .chat-widget .answer-text pre code { padding: 0; background: transparent; border: none; color: #dbe4f3; font-size: 0.85em; }
+  .chat-widget .answer-text pre code { padding: 0; background: transparent; border: none; color: #cbd3da; font-size: 0.85em; }
   .chat-widget .answer-text blockquote {
     margin: 0.6em 0; padding: 4px 12px;
-    border-left: 3px solid #6366f1; color: #a3b1c6;
-    background: rgba(99, 102, 241, 0.06); border-radius: 0 8px 8px 0;
+    border-left: 2px solid #e8452e; color: #9aa0a6;
+    background: rgba(232, 69, 46, 0.05); border-radius: 0 2px 2px 0;
   }
   .chat-widget .answer-text table {
     margin: 0.7em 0; border-collapse: collapse; font-size: 0.85em;
@@ -564,47 +568,47 @@ const roadmapCount = (await getCollection('roadmaps')).length;
   .chat-widget .answer-text th, .chat-widget .answer-text td {
     border: 1px solid rgba(148, 163, 184, 0.22); padding: 6px 10px; text-align: left;
   }
-  .chat-widget .answer-text th { background: rgba(99, 102, 241, 0.14); color: #fff; font-weight: 600; }
+  .chat-widget .answer-text th { background: rgba(232, 69, 46, 0.12); color: #fff; font-weight: 600; }
   .chat-widget .answer-text hr { border: none; border-top: 1px solid rgba(148, 163, 184, 0.16); margin: 0.8em 0; }
 
   /* 引用徽标 */
   .chat-widget .ref-badge {
     display: inline-flex; align-items: center; justify-content: center;
     min-width: 18px; height: 18px; padding: 0 5px; margin: 0 1px;
-    border-radius: 5px; font-size: 11px; font-weight: 700;
-    color: #a5b0fa; background: rgba(94, 106, 210, 0.14);
-    border: 1px solid rgba(94, 106, 210, 0.3);
+    border-radius: 2px; font-size: 11px; font-weight: 700;
+    color: #ff8a70; background: rgba(232, 69, 46, 0.14);
+    border: 1px solid rgba(232, 69, 46, 0.35);
     text-decoration: none; vertical-align: baseline;
     transition: background 0.2s, color 0.2s;
   }
-  .chat-widget .ref-badge:hover { background: rgba(94, 106, 210, 0.3); color: #c7cdfb; }
+  .chat-widget .ref-badge:hover { background: rgba(232, 69, 46, 0.3); color: #ffc2b5; }
 
   /* ============ 来源卡片 ============ */
   .chat-widget .sources {
     margin-top: 14px; padding-top: 12px;
     border-top: 1px solid rgba(148, 163, 184, 0.12);
   }
-  .chat-widget .sources-title { font-size: 12px; color: #a3b1c6; margin-bottom: 8px; }
+  .chat-widget .sources-title { font-size: 12px; color: #9aa0a6; margin-bottom: 8px; }
   .chat-widget .sources ul { list-style: none; display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; }
   .chat-widget .sources a {
     display: flex; align-items: center; gap: 10px; padding: 8px 10px;
-    border-radius: 10px; background: rgba(99, 102, 241, 0.08);
-    border: 1px solid rgba(99, 102, 241, 0.14);
+    border-radius: 2px; background: rgba(232, 69, 46, 0.07);
+    border: 1px solid rgba(232, 69, 46, 0.12);
     transition: background 0.2s, border-color 0.2s;
   }
-  .chat-widget .sources a:hover { background: rgba(99, 102, 241, 0.16); border-color: rgba(99, 102, 241, 0.32); }
+  .chat-widget .sources a:hover { background: rgba(232, 69, 46, 0.14); border-color: rgba(232, 69, 46, 0.4); }
   .chat-widget .src-idx {
     flex-shrink: 0; width: 22px; height: 22px;
     display: flex; align-items: center; justify-content: center;
-    border-radius: 6px; background: #5e6ad2;
+    border-radius: 2px; background: #e8452e;
     color: white; font-size: 12px; font-weight: 700;
   }
   .chat-widget .src-body { display: flex; flex-direction: column; min-width: 0; }
   .chat-widget .src-title {
-    font-size: 13px; color: #e6edf6; line-height: 1.4;
+    font-size: 13px; color: #f5f6f7; line-height: 1.4;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .chat-widget .src-cat { font-size: 11px; color: #7c8db5; }
+  .chat-widget .src-cat { font-size: 11px; color: #8a9096; }
 
   /* ============ 打字指示器（三圆点） ============ */
   .chat-widget .chat-typing {
@@ -612,8 +616,8 @@ const roadmapCount = (await getCollection('roadmaps')).length;
     padding: 6px 0;
   }
   .chat-widget .chat-typing span {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: #818cf8;
+    width: 7px; height: 7px; border-radius: 1px;
+    background: #e8452e;
     animation: chat-typing-bounce 1.4s ease-in-out infinite;
   }
   .chat-widget .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
@@ -628,14 +632,14 @@ const roadmapCount = (await getCollection('roadmaps')).length;
     display: flex; align-items: flex-end; gap: 8px;
     padding: 12px 14px;
     border-top: 1px solid rgba(148, 163, 184, 0.12);
-    background: rgba(13, 21, 38, 0.4);
+    background: rgba(5, 6, 7, 0.4);
   }
   .chat-widget .chat-textarea {
     flex: 1; resize: none;
-    border-radius: 12px;
+    border-radius: 2px;
     border: 1px solid rgba(148, 163, 184, 0.18);
     background: rgba(148, 163, 184, 0.08);
-    color: #e6edf6;
+    color: #f5f6f7;
     padding: 10px 12px;
     font-size: 0.925rem; line-height: 1.5;
     outline: none; transition: border-color 0.2s, background 0.2s;
@@ -643,7 +647,7 @@ const roadmapCount = (await getCollection('roadmaps')).length;
     max-height: 160px;
   }
   .chat-widget .chat-textarea:focus {
-    border-color: rgba(99, 102, 241, 0.5);
+    border-color: rgba(232, 69, 46, 0.5);
     background: rgba(148, 163, 184, 0.12);
   }
   .chat-widget .chat-textarea::placeholder { color: #64748b; }
@@ -652,12 +656,12 @@ const roadmapCount = (await getCollection('roadmaps')).length;
   .chat-widget .chat-send-btn {
     flex-shrink: 0; width: 38px; height: 38px;
     display: flex; align-items: center; justify-content: center;
-    border-radius: 10px; border: none;
-    background: #5e6ad2;
+    border-radius: 2px; border: none;
+    background: #e8452e;
     color: white; cursor: pointer;
     transition: background 0.2s, transform 0.1s;
   }
-  .chat-widget .chat-send-btn:hover { background: #4f5ac2; }
+  .chat-widget .chat-send-btn:hover { background: #c9371f; }
   .chat-widget .chat-send-btn:active { transform: scale(0.94); }
   .chat-widget .chat-send-btn.is-stop { background: #dc2626; }
   .chat-widget .chat-send-btn .icon-stop { display: none; }
@@ -674,10 +678,10 @@ const roadmapCount = (await getCollection('roadmaps')).length;
     margin-bottom: 28px;
   }
   .chat-widget .chat-empty-title {
-    margin-top: 16px; font-size: 1.2rem; font-weight: 600; color: #e6edf6;
+    margin-top: 16px; font-size: 1.2rem; font-weight: 600; color: #f5f6f7;
   }
   .chat-widget .chat-empty-desc {
-    margin-top: 8px; font-size: 13px; color: #7c8db5;
+    margin-top: 8px; font-size: 13px; color: #8a9096;
     max-width: 360px; line-height: 1.6;
   }
   .chat-widget .chat-suggest-grid {
@@ -686,7 +690,7 @@ const roadmapCount = (await getCollection('roadmaps')).length;
   }
   .chat-widget .chat-suggest-card {
     display: flex; flex-direction: column; align-items: flex-start;
-    padding: 14px; border-radius: 12px;
+    padding: 14px; border-radius: 2px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.025);
     text-align: left; cursor: pointer;
@@ -699,23 +703,23 @@ const roadmapCount = (await getCollection('roadmaps')).length;
   .chat-widget .chat-suggest-icon {
     width: 32px; height: 32px;
     display: flex; align-items: center; justify-content: center;
-    border-radius: 9px;
+    border-radius: 2px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.05);
-    color: #a5b0fa;
+    color: #ff8a70;
     margin-bottom: 10px;
   }
   .chat-widget .chat-suggest-title {
-    font-size: 13.5px; font-weight: 600; color: #e6edf6; line-height: 1.4;
+    font-size: 13.5px; font-weight: 600; color: #f5f6f7; line-height: 1.4;
   }
   .chat-widget .chat-suggest-desc {
-    margin-top: 3px; font-size: 11.5px; color: #7c8db5; line-height: 1.5;
+    margin-top: 3px; font-size: 11.5px; color: #8a9096; line-height: 1.5;
   }
 
   .chat-widget .chat-error { color: #fca5a5; }
   .chat-widget .chat-error code {
     color: #cbd5e1; background: rgba(255, 255, 255, 0.06);
-    padding: 1px 6px; border-radius: 4px;
+    padding: 1px 6px; border-radius: 2px;
   }
 
   /* ============ 移动端适配 ============ */

@@ -24,9 +24,12 @@
 
     let pagefind = null;
     try {
-      // 路径放入变量 + @vite-ignore，彻底绕过 Vite 解析（pagefind 索引在 postbuild 生成）
-      const url = '/pagefind/pagefind.js';
-      pagefind = await import(/* @vite-ignore */ url);
+      // 用 new Function 构造动态 import：Vite 无法静态分析其内部，
+      // 从而不会用 __vitePreload 包装，也避免被 @vite-ignore 后残留未定义的
+      // __VITE_PRELOAD__（否则运行时抛 ReferenceError，搜索会静默失效）。
+      // pagefind 索引在 postbuild 生成，dev 环境静默降级。
+      const loadPagefind = new Function('u', 'return import(u)');
+      pagefind = await loadPagefind('/pagefind/pagefind.js');
     } catch {
       return; // 未构建索引（dev 环境）时静默
     }

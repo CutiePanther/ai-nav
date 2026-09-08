@@ -1,7 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
-import { Icon } from 'astro-icon/components';
 
 const docs = await getCollection('docs');
 const tools = await getCollection('tools');
@@ -25,10 +24,11 @@ const AI_VISIBLE = import.meta.env.DEV || import.meta.env.PUBLIC_AI_ENABLED === 
 ---
 
 <Layout title="首页" description="AI 开发者的一站式学习导航站：聚合文档、工具、资讯、题库与学习路线，从入门到进阶的完整路径">
-  <!-- ============ Hero：渐变标语 + AI 搜索 + 统计装饰 ============ -->
+  <!-- ============ Hero：标语 + AI 搜索 + 统计装饰 ============ -->
   <section class="hero-panel relative pb-12 pt-16 sm:pt-20">
     <div class="mx-auto max-w-2xl text-center">
-      <h1 class="text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+      <p class="eyebrow text-[11px]">AI 开发学习导航</p>
+      <h1 class="mt-3 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
         从入门到进阶的<br class="sm:hidden" /><span class="text-grad-accent">AI 开发学习路径</span>
       </h1>
       {AI_VISIBLE && (
@@ -38,21 +38,19 @@ const AI_VISIBLE = import.meta.env.DEV || import.meta.env.PUBLIC_AI_ENABLED === 
       )}
     </div>
 
-    <!-- 单一 AI 搜索框：提交后跳转 AI 详情页（仅本地/内网可用） -->
+    <!-- 单一 AI 搜索框（Apple field 组件）：提交后跳转 AI 详情页（仅本地/内网可用） -->
     {AI_VISIBLE && (
-      <form action="/ai" method="get" class="mx-auto mt-7 flex w-full max-w-2xl items-center rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1.5 transition focus-within:border-[var(--accent)]">
-        <div class="flex flex-1 items-center gap-2 pl-3 pr-2">
-          <Icon name="lucide:search" class="h-4 w-4 shrink-0 text-[var(--text-3)]" />
-          <input
-            name="q"
-            type="text"
-            placeholder="搜索 AI 开发问题，例如：什么是 RAG？"
-            autocomplete="off"
-            aria-label="搜索 AI 开发问题"
-            class="home-search-input w-full flex-1 bg-transparent py-2.5 text-sm text-[var(--text-1)] outline-none placeholder:text-[var(--text-3)]"
-          />
-        </div>
-        <button type="submit" class="btn-primary shrink-0 rounded-lg px-5">搜索</button>
+      <form action="/ai" method="get" class="field mx-auto mt-8 max-w-2xl gap-2">
+        <svg class="shrink-0 text-[var(--icon-muted)]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+        <input
+          name="q"
+          type="text"
+          placeholder="搜索 AI 开发问题，例如：什么是 RAG？"
+          autocomplete="off"
+          aria-label="搜索 AI 开发问题"
+          class="control py-2.5 text-sm"
+        />
+        <button type="submit" class="btn btn-primary shrink-0 !px-4 text-sm">搜索</button>
       </form>
     )}
 
@@ -75,9 +73,10 @@ const AI_VISIBLE = import.meta.env.DEV || import.meta.env.PUBLIC_AI_ENABLED === 
         { title: '查文档 · 找工具', desc: '需要什么就搜什么，官方文档与 AI 工具按分类聚合，点开即用。' },
         { title: '追资讯 · 学知识', desc: '每天看看最新行业动态与技术前沿，保持信息不落后。' },
         { title: '刷题库 · 跟路线', desc: '对照学习路线图按阶段推进，用面试题检验掌握程度。' },
-      ].map((s) => (
+      ].map((s, i) => (
         <div class="card p-6">
-          <h3 class="text-lg font-semibold tracking-tight text-[var(--text-1)]">{s.title}</h3>
+          <span class="step-num text-sm">{`0${i + 1}`}</span>
+          <h3 class="mt-3 text-lg font-semibold tracking-tight text-[var(--text-1)]">{s.title}</h3>
           <p class="mt-1.5 text-sm leading-relaxed text-[var(--text-2)]">{s.desc}</p>
         </div>
       ))}
@@ -88,13 +87,13 @@ const AI_VISIBLE = import.meta.env.DEV || import.meta.env.PUBLIC_AI_ENABLED === 
   <section class="mt-16">
     <div class="mb-5 flex items-center justify-between">
       <h2 class="section-title text-2xl">最新资讯</h2>
-      <a href="/info" class="text-sm font-medium text-[var(--accent-text)] transition hover:text-indigo-200">查看全部 →</a>
+      <a href="/info" class="text-sm font-medium text-[var(--accent-text)] transition hover:text-[var(--accent)]">查看全部 →</a>
     </div>
     <div class="card overflow-hidden p-0">
       {info.map((item, i) => (
         <a
           href={`/info/${item.id}/`}
-          class:list={['flex items-start gap-3 px-5 py-4 transition hover:bg-white/[0.03]', i !== 0 && 'border-t border-[var(--border)]']}
+          class:list={['flex items-start gap-3 px-5 py-4 transition hover:bg-[var(--surface-2)]', i !== 0 && 'border-t border-[var(--border)]']}
         >
           <span class="badge mt-0.5 shrink-0">{item.data.category}</span>
           <div class="min-w-0">

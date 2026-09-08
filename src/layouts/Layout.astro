@@ -36,16 +36,42 @@ const path = Astro.url.pathname;
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#ffffff" />
     <title>{title} · {siteName}</title>
     {description && <meta name="description" content={description} />}
     <meta property="og:title" content={`${title} · ${siteName}`} />
     {description && <meta property="og:description" content={description} />}
     <meta property="og:type" content="website" />
     <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <!-- 防闪烁：渲染前根据系统偏好/localStorage 设置亮暗主题 -->
+    <script is:inline>
+      (function () {
+        var theme = localStorage.getItem("theme");
+        if (theme !== "light" && theme !== "dark") {
+          theme = matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+        }
+        var html = document.documentElement;
+        if (theme === "dark") html.classList.add("dark");
+        else html.classList.remove("dark");
+        html.style.colorScheme = theme;
+        var tc = document.querySelector('meta[name="theme-color"]');
+        if (tc) tc.setAttribute("content", theme === "dark" ? "#000000" : "#ffffff");
+        window.__theme = theme;
+      })();
+    </script>
   </head>
   <body class="relative flex min-h-screen flex-col">
     <a href="#main" class="skip-link">跳到主内容</a>
-    <header class="sticky top-0 z-30 border-b border-[var(--border)] bg-[#0b0c0f]/85 backdrop-blur-md">
+    <header class="sticky top-0 z-30 border-b border-[var(--border)] bg-[var(--background)]/85 backdrop-blur-md">
       <div class="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
         <a href="/" class="flex shrink-0 items-center gap-2 font-bold tracking-tight">
           <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)] text-sm font-bold text-white">AI</span>
@@ -56,10 +82,10 @@ const path = Astro.url.pathname;
             <a
               href={l.href}
               class:list={[
-                'relative rounded-lg px-3 py-1.5 transition',
+                'relative rounded-full px-3 py-1.5 transition',
                 (path === l.href || path.startsWith(l.href + '/'))
                   ? 'font-semibold text-[var(--text-1)]'
-                  : 'hover:bg-white/[0.04] hover:text-[var(--text-1)]',
+                  : 'hover:bg-[var(--surface-2)] hover:text-[var(--text-1)]',
               ]}
             >
               {l.label}
@@ -69,8 +95,21 @@ const path = Astro.url.pathname;
             </a>
           ))}
         </nav>
-        <div class="ml-auto w-full max-w-xs">
-          <Search />
+        <div class="ml-auto flex w-full max-w-xs items-center gap-1.5">
+          <div class="min-w-0 flex-1">
+            <Search />
+          </div>
+          <button
+            id="theme-toggle"
+            type="button"
+            aria-label="切换亮暗主题"
+            title="切换亮暗主题"
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[var(--text-2)] transition hover:bg-[var(--surface-2)] hover:text-[var(--text-1)]"
+          >
+            <!-- 亮色模式显示的月牙图标（点击切到暗色）；暗色模式显示太阳图标 -->
+            <svg data-icon="moon" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+            <svg data-icon="sun" class="hidden h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
+          </button>
         </div>
       </div>
       <!-- 移动端导航 -->
@@ -82,7 +121,7 @@ const path = Astro.url.pathname;
               'shrink-0 rounded-full px-3 py-1 transition',
               (path === l.href || path.startsWith(l.href + '/'))
                 ? 'bg-[var(--accent)] font-semibold text-white'
-                : 'bg-white/[0.05] hover:bg-white/[0.09]',
+                : 'bg-[var(--surface-2)] hover:bg-[var(--border)]',
             ]}
           >
             {l.label}
@@ -143,5 +182,27 @@ const path = Astro.url.pathname;
     </footer>
 
     {AI_VISIBLE && floatingAI && <ChatWidget mode="floating" />}
+
+    <script>
+      const btn = document.getElementById('theme-toggle');
+      if (btn) {
+        const moon = btn.querySelector('[data-icon="moon"]');
+        const sun = btn.querySelector('[data-icon="sun"]');
+        function syncIcons(dark) {
+          moon?.classList.toggle('hidden', dark);
+          sun?.classList.toggle('hidden', !dark);
+        }
+        syncIcons(document.documentElement.classList.contains('dark'));
+        btn.addEventListener('click', () => {
+          const html = document.documentElement;
+          const dark = html.classList.toggle('dark');
+          html.style.colorScheme = dark ? 'dark' : 'light';
+          localStorage.setItem('theme', dark ? 'dark' : 'light');
+          syncIcons(dark);
+          const tc = document.querySelector('meta[name="theme-color"]');
+          if (tc) tc.setAttribute('content', dark ? '#000000' : '#ffffff');
+        });
+      }
+    </script>
   </body>
 </html>

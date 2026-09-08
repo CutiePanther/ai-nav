@@ -1,56 +1,172 @@
 @import "tailwindcss";
+/* Apple 双主题设计系统（基于 design_libraries/Apple，主色苹果蓝，亮/暗双态） */
 
-/*
- * 设计系统：Editorial Dark（参考 Linear / Vercel）
- * 原则：
- *   1. 单一 accent（indigo 色阶重定义为品牌蓝 #5E6AD2 系）
- *   2. 层级靠亮度阶梯 + 边框透明度 + 留白，不靠多色渐变
- *   3. 无发光、无渐变文字、无背景光晕
- */
-
-@theme {
-  /* 品牌蓝（Linear 式），覆盖 Tailwind indigo 默认色阶 */
-  --color-indigo-200: #c7cdfb;
-  --color-indigo-300: #a5b0fa;
-  --color-indigo-400: #7d89f7;
-  --color-indigo-500: #5e6ad2;
-  --color-indigo-600: #4f5ac2;
-
-  /* 功能色（仅用于状态语义：难度/价格，不做装饰） */
-  --color-ok: #34d399;
-  --color-warn: #fbbf24;
-  --color-danger: #f87171;
-}
-
+/* ================= 原始色板（Apple 系统色） ================= */
 :root {
-  --bg: #0b0c0f;
-  --surface: rgba(255, 255, 255, 0.025);
-  --surface-2: rgba(255, 255, 255, 0.05);
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
-  --text-1: #f2f3f5;
-  --text-2: #9ca3af;
-  --text-3: #6b7280;
-  --accent: #5e6ad2;
-  --accent-text: #a5b0fa;
-  /* 深层装饰：单 accent 径向光晕（透明度低、克制） */
-  --accent-glow: rgba(94, 106, 210, 0.16);
-  --accent-glow-soft: rgba(94, 106, 210, 0.07);
-  --grid-line: rgba(255, 255, 255, 0.04);
+  /* brand（苹果蓝） */
+  --brand-50: #e8f2ff;
+  --brand-100: #cfe5ff;
+  --brand-200: #9fcbff;
+  --brand-300: #66abff;
+  --brand-400: #66a5ff;
+  --brand-500: #007aff;
+  --brand-600: #0064d6;
+  --brand-700: #004fad;
+  --brand-800: #003b82;
+  --brand-900: #00275a;
+
+  /* background（灰阶） */
+  --background-50: #ffffff;
+  --background-100: #f7f7fa;
+  --background-200: #f2f2f7;
+  --background-300: #e5e5ea;
+  --background-400: #d1d1d6;
+  --background-500: #aeaeb2;
+  --background-600: #8e8e93;
+  --background-700: #3a3a3c;
+  --background-800: #1c1c1e;
+  --background-900: #000000;
+
+  /* text / icon / state */
+  --text-50: #f5f5f7;
+  --text-100: #e3e3e8;
+  --text-200: #c7c7cc;
+  --text-300: #aeaeb2;
+  --text-400: #8e8e93;
+  --text-500: #6e6e73;
+  --text-600: #48484a;
+  --text-700: #3c3c43;
+  --text-800: #1d1d1f;
+  --text-900: #000000;
+  --icon-50: #f5f5f7;
+  --icon-400: #aeaeb2;
+  --icon-500: #8e8e93;
+  --icon-900: #1d1d1f;
+  --state-success: #34c759;
+  --state-error: #ff3b30;
+
+  /* 字体 / 排版 / 圆角 / 阴影 / 间距 */
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
+    monospace;
+  --tracking-normal: 0em;
+  --radius: 1.2rem;
+  --shadow-2xs: 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 1px 3px -1px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 8px 24px -8px rgba(0, 0, 0, 0.08), 0 4px 8px -4px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 16px 40px -10px rgba(0, 0, 0, 0.1), 0 8px 16px -8px rgba(0, 0, 0, 0.06);
+  --shadow-2xl: 0 24px 64px -12px rgba(0, 0, 0, 0.12);
+  --spacing: 0.24rem;
+
+  /* ===== Apple 语义 token（亮色）===== */
+  --background: var(--background-50);
+  --foreground: var(--text-800);
+  --card: var(--background-50);
+  --card-foreground: var(--text-800);
+  --popover: var(--background-50);
+  --popover-foreground: var(--text-900);
+  --primary: var(--brand-500);
+  --primary-foreground: var(--background-50);
+  --secondary: var(--background-200);
+  --secondary-foreground: var(--text-800);
+  --muted: var(--background-200);
+  --muted-foreground: var(--text-400);
+  --destructive: var(--state-error);
+  --destructive-foreground: #ffffff;
+  --success: var(--state-success);
+  --success-foreground: #ffffff;
+  --border: var(--background-300);
+  --input: var(--background-400);
+  --ring: var(--brand-500);
+  --icon: var(--icon-900);
+  --icon-muted: var(--icon-500);
+  --chart-2: var(--brand-500);
+  --chart-3: #ff9500;
+
+  /* ===== 项目旧别名 → Apple 语义（亮色）===== */
+  --bg: var(--background);
+  --surface: var(--card);
+  --surface-2: var(--secondary);
+  --border-strong: var(--background-400);
+  --text-1: var(--foreground);
+  --text-2: var(--muted-foreground);
+  --text-3: var(--text-500);
+  --accent: var(--primary);
+  --accent-text: var(--brand-600);
+  --accent-glow: rgba(0, 122, 255, 0.1);
+  --accent-glow-soft: rgba(0, 122, 255, 0.05);
+  --grid-line: rgba(0, 0, 0, 0.035);
+
+  color-scheme: light;
 }
 
+/* ===== Apple 语义 token（暗色） ===== */
+.dark {
+  --background: var(--background-900);
+  --foreground: var(--text-50);
+  --card: var(--background-800);
+  --card-foreground: var(--text-50);
+  --popover: var(--background-700);
+  --popover-foreground: var(--text-50);
+  --primary: var(--brand-400);
+  --primary-foreground: var(--background-900);
+  --secondary: var(--background-800);
+  --secondary-foreground: var(--text-50);
+  --muted: var(--background-800);
+  --muted-foreground: var(--text-400);
+  --destructive: #ff453a;
+  --destructive-foreground: #ffffff;
+  --success: #30d158;
+  --success-foreground: #ffffff;
+  --border: var(--background-700);
+  --input: var(--background-700);
+  --ring: var(--brand-400);
+  --icon: var(--icon-50);
+  --icon-muted: var(--icon-500);
+  --chart-2: var(--brand-400);
+  --chart-3: #ff9f0a;
+
+  --shadow-2xs: 0 1px 2px -1px rgba(0, 0, 0, 0.3);
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.36), 0 1px 3px -1px rgba(0, 0, 0, 0.36);
+  --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.44), 0 2px 4px -2px rgba(0, 0, 0, 0.36);
+  --shadow-lg: 0 8px 24px -8px rgba(0, 0, 0, 0.5), 0 4px 8px -4px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 16px 40px -10px rgba(0, 0, 0, 0.55), 0 8px 16px -8px rgba(0, 0, 0, 0.44);
+  --shadow-2xl: 0 24px 64px -12px rgba(0, 0, 0, 0.6);
+
+  /* 项目旧别名（暗色） */
+  --bg: var(--background);
+  --surface: var(--card);
+  --surface-2: var(--background-700);
+  --border-strong: var(--background-700);
+  --text-1: var(--foreground);
+  --text-2: var(--text-300);
+  --text-3: var(--text-500);
+  --accent: var(--primary);
+  --accent-text: var(--brand-300);
+  --accent-glow: rgba(10, 132, 255, 0.14);
+  --accent-glow-soft: rgba(10, 132, 255, 0.08);
+  --grid-line: rgba(255, 255, 255, 0.045);
+
+  color-scheme: dark;
+}
+
+/* ================= 基础 ================= */
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
 }
 
 body {
-  font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC",
-    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  color: var(--text-1);
-  background-color: var(--bg);
+  font-family: var(--font-sans);
+  color: var(--foreground);
+  background-color: var(--background);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 a {
@@ -59,31 +175,25 @@ a {
 }
 
 ::selection {
-  background: rgba(94, 106, 210, 0.4);
-  color: #fff;
+  background: var(--ring);
+  color: var(--primary-foreground);
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
-/* 首页搜索条：去掉输入框自身的 focus 描边，聚焦效果由外层容器统一呈现 */
-.home-search-input:focus,
-.home-search-input:focus-visible {
-  outline: none;
-}
-
-/* 无障碍：跳过导航直达内容（屏幕阅读/键盘用户） */
+/* 无障碍：跳过导航直达内容 */
 .skip-link {
   position: absolute;
   left: 12px;
   top: -48px;
   z-index: 50;
-  border-radius: 8px;
-  background: var(--accent);
-  color: #fff;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
   padding: 8px 14px;
   font-size: 14px;
   font-weight: 600;
@@ -93,9 +203,140 @@ a {
   top: 12px;
 }
 
-/* ===== 组件类 ===== */
+/* ================= Apple 组件 ================= */
 
-/* 底层装饰：Hero 径向光晕（单 accent，从顶部向下柔和）+ 细网格线 */
+/* 输入框字段（Apple Input .field）：图标 + 输入 + 清除 */
+.field {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing) * 2);
+  width: 100%;
+  height: 44px;
+  padding: 0 calc(var(--spacing) * 3);
+  border: 1px solid var(--input);
+  border-radius: var(--radius);
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: var(--shadow-xs);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.field:focus-within {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 1px var(--ring);
+}
+.field.disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.field .control {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.field .control::placeholder {
+  color: var(--muted-foreground);
+}
+.field .icon,
+.field .clear {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--icon-muted);
+  font: inherit;
+  line-height: 1;
+}
+
+/* 按钮（Apple Button） */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--spacing) * 1.5);
+  height: 40px;
+  padding: 0 20px;
+  border: none;
+  border-radius: calc(var(--radius) * 2);
+  background: transparent;
+  color: var(--foreground);
+  font: 600 14px/1 var(--font-sans);
+  letter-spacing: var(--tracking-normal);
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease, opacity 0.18s ease,
+    filter 0.18s ease;
+}
+.btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.btn-primary:hover {
+  filter: brightness(0.96);
+}
+.btn-secondary {
+  height: 48px;
+  padding: 0 24px;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+.btn-secondary:hover {
+  background: var(--muted);
+}
+.btn-text {
+  height: 48px;
+  padding: 0 4px;
+  box-shadow: none;
+}
+.btn-text:hover {
+  color: var(--primary);
+}
+.btn-lg {
+  height: 56px;
+  padding: 0 28px;
+  font-size: 16px;
+}
+
+/* 卡片（Apple Card） */
+.card {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease,
+    background 0.18s ease;
+}
+.card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+/* Apple 文案辅助类 */
+.eyebrow {
+  color: var(--muted-foreground);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.muted {
+  color: var(--muted-foreground);
+}
+
+/* ================= 项目原有组件类（映射到 Apple 语义） ================= */
+
+/* Hero 装饰层：极浅的苹果蓝光晕 + 细网格（克制） */
 .hero-panel {
   position: relative;
   isolation: isolate;
@@ -116,15 +357,15 @@ a {
   pointer-events: none;
 }
 
-/* 标题渐变强调字（仅用于 Hero 单个词，白→accent，克制不花哨） */
+/* 标题渐变强调字（白/前景 → 苹果蓝 渐变，克制） */
 .text-grad-accent {
-  background: linear-gradient(100deg, #ffffff 20%, var(--accent-text) 90%);
+  background: linear-gradient(100deg, var(--foreground) 20%, var(--primary) 90%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-/* 特性 icon tile：accent 柔和底 + 圆角 icon 容器 */
+/* 特性 icon tile */
 .feature-tile {
   display: inline-flex;
   align-items: center;
@@ -135,7 +376,7 @@ a {
   color: var(--accent-text);
 }
 
-/* 编号步骤块：左侧 accent 竖条 + 大号序号 */
+/* 编号步骤块 */
 .step-num {
   display: inline-flex;
   align-items: center;
@@ -145,53 +386,7 @@ a {
   font-variant-numeric: tabular-nums;
 }
 
-/* 基础卡片：边框 + 面板色，hover 仅提亮边框并带极轻微 accent 描边 */
-.card {
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-.card:hover {
-  border-color: var(--border-strong);
-  background: var(--surface-2);
-}
-
-/* 卡片悬浮位移（保留给需要强调的入口卡），hover 带极轻 accent 描边 */
-.card-lift {
-  transition: border-color 0.15s ease, background 0.15s ease;
-  position: relative;
-}
-.card-lift::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 12px;
-  border: 1px solid transparent;
-  pointer-events: none;
-  transition: border-color 0.2s ease;
-}
-.card-lift:hover {
-  border-color: var(--border-strong);
-  background: var(--surface-2);
-}
-.card-lift:hover::after {
-  border-color: var(--accent-glow);
-}
-
-/* CTA 通栏：accent 渐变底 */
-.cta-band {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  border-radius: 16px;
-  border: 1px solid var(--accent-glow);
-  background:
-    radial-gradient(ellipse 75% 130% at 50% -20%, var(--accent-glow), transparent 70%),
-    var(--surface);
-}
-
-/* 章节标题：左侧短 accent 竖条 */
+/* 章节标题：左侧短苹果蓝竖条 */
 .section-title {
   position: relative;
   padding-left: 14px;
@@ -212,45 +407,28 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  border-radius: 6px;
+  border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--surface-2);
-  padding: 2px 8px;
+  padding: 2px 10px;
   font-size: 12px;
   line-height: 1.5;
-  color: var(--text-2);
+  color: var(--muted-foreground);
   white-space: nowrap;
 }
 
-/* 主按钮：纯色 */
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  background: var(--accent);
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
-  transition: background 0.15s ease;
-}
-.btn-primary:hover {
-  background: var(--color-indigo-600);
-}
-
-/* 次按钮：描边 */
+/* 次按钮（项目旧用法） */
 .btn-ghost {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: 999px;
   border: 1px solid var(--border);
   background: transparent;
   padding: 10px 20px;
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-1);
+  color: var(--foreground);
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 .btn-ghost:hover {
@@ -268,7 +446,7 @@ a {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--border-strong);
   transition: background 0.25s ease;
 }
 .stage-progress .dot.active {
@@ -278,7 +456,7 @@ a {
   flex: 1;
   height: 2px;
   min-width: 12px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border);
   border-radius: 2px;
 }
 .stage-progress .bar.active {
@@ -292,7 +470,7 @@ a {
   height: 5px;
   border-radius: 999px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--border);
 }
 .diff-mini span {
   transition: opacity 0.25s ease;
@@ -304,13 +482,13 @@ a {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--border-strong);
   border-radius: 6px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.24);
+  background: var(--muted-foreground);
   background-clip: content-box;
 }
 ::-webkit-scrollbar-track {
@@ -370,20 +548,20 @@ a {
   color: var(--accent-text);
 }
 .prose-answer code {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.875em;
-  color: #cbd5e1;
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-1);
+  background: var(--surface-2);
   border: 1px solid var(--border);
   padding: 0.1em 0.4em;
-  border-radius: 5px;
+  border-radius: 6px;
 }
 .prose-answer pre {
   margin-top: 0.9em;
   padding: 1em 1.2em;
-  background: #08090c;
+  background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   overflow-x: auto;
 }
 .prose-answer pre code {
@@ -397,7 +575,7 @@ a {
   padding: 0.6em 1em;
   border-left: 3px solid var(--accent);
   background: var(--surface);
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 12px 12px 0;
   color: var(--text-2);
 }
 .prose-answer table {

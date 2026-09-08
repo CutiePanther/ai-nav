@@ -54,16 +54,16 @@ const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rou
     </div>
     <select
       id="tool-sort"
-      class="shrink-0 cursor-pointer rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 text-sm text-[var(--text-2)] outline-none transition focus:border-indigo-400/50"
+      class="shrink-0 cursor-pointer rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 text-sm text-[var(--text-2)] outline-none transition focus:border-[var(--ring)]"
     >
-      <option value="default" class="bg-[#0b0c0f]">默认排序</option>
-      <option value="free" class="bg-[#0b0c0f]">免费优先</option>
-      <option value="name" class="bg-[#0b0c0f]">名称 A-Z</option>
+      <option value="default" class="bg-[var(--background)] text-[var(--text-1)]">默认排序</option>
+      <option value="free" class="bg-[var(--background)] text-[var(--text-1)]">免费优先</option>
+      <option value="name" class="bg-[var(--background)] text-[var(--text-1)]">名称 A-Z</option>
     </select>
   </div>
 
   <!-- 分类筛选 -->
-  <div class="sticky top-16 z-20 -mx-4 mb-6 bg-[#0b0c0f]/90 px-4 py-3 backdrop-blur sm:top-[68px]">
+  <div class="sticky top-16 z-20 -mx-4 mb-6 bg-[var(--background)]/85 px-4 py-3 backdrop-blur-md sm:top-[68px]">
     <div class="flex flex-wrap gap-2" id="filter-bar">
       <button data-filter="all" class={ACTIVE}>全部</button>
       {categories.map((c) => (

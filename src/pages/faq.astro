@@ -34,24 +34,24 @@ const diffColor: Record<string, string> = {
   高级: 'text-rose-400',
 };
 
-const ACTIVE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm bg-[var(--hal)] px-3.5 py-1.5 text-sm font-medium text-white transition';
-const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm bg-[var(--surface)] px-3.5 py-1.5 text-sm text-[var(--text-2)] ring-1 ring-[var(--border)] transition hover:text-[var(--hal-text)] hover:ring-[var(--border-strong)]';
+const ACTIVE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--accent)] px-3.5 py-1.5 text-sm font-medium text-white transition';
+const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--surface)] px-3.5 py-1.5 text-sm text-[var(--text-2)] ring-1 ring-[var(--border)] transition hover:text-[var(--accent-text)] hover:ring-[var(--border-strong)]';
 ---
 
 <Layout title="精选面试题" description="大模型、机器学习、深度学习、工程系统、AI 八股文与计算机基础的高频面试题精选集">
   <header class="mb-6">
-    <h1 class="font-display text-3xl font-medium tracking-[0.08em] sm:text-4xl">精选面试题</h1>
+    <h1 class="text-3xl font-bold sm:text-4xl">精选面试题</h1>
     <p class="mt-3 max-w-2xl text-[var(--text-2)]">
       共 {faq.length} 道高频题，按分类、难度、标签筛选，点卡片查看结构化详解。
     </p>
   </header>
 
   <!-- 筛选栏 -->
-  <div class="sticky top-16 z-20 -mx-4 mb-6 bg-[#050607]/90 px-4 py-3 backdrop-blur sm:top-[68px]">
+  <div class="sticky top-16 z-20 -mx-4 mb-6 bg-[#0b0c0f]/90 px-4 py-3 backdrop-blur sm:top-[68px]">
     <div class="flex flex-col gap-2.5">
       <!-- 分类 -->
       <div class="flex flex-wrap items-center gap-2">
-        <span class="mono-label w-12 shrink-0">分类</span>
+        <span class="w-12 shrink-0 text-xs font-medium text-[var(--text-3)]">分类</span>
         <button data-kind="cat" data-filter="all" class={ACTIVE}>全部</button>
         {categories.map((c) => (
           <button data-kind="cat" data-filter={c} class={IDLE}>
@@ -62,7 +62,7 @@ const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rou
       </div>
       <!-- 难度 -->
       <div class="flex flex-wrap items-center gap-2">
-        <span class="mono-label w-12 shrink-0">难度</span>
+        <span class="w-12 shrink-0 text-xs font-medium text-[var(--text-3)]">难度</span>
         <button data-kind="diff" data-filter="all" class={ACTIVE}>不限</button>
         {difficulties.map((d) => (
           <button data-kind="diff" data-filter={d} class={IDLE}>{d}</button>
@@ -70,8 +70,8 @@ const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rou
       </div>
       <!-- 标签 -->
       <div class="flex flex-wrap items-center gap-2">
-        <span class="mono-label w-12 shrink-0">标签</span>
-        <button data-kind="tag" data-filter="__clear__" class="clear-tags inline-flex items-center gap-1 whitespace-nowrap rounded-sm px-2.5 py-1.5 text-sm text-[var(--text-3)] ring-1 ring-[var(--border)] transition hover:text-[var(--hal-text)] hover:ring-[var(--border-strong)]">
+        <span class="w-12 shrink-0 text-xs font-medium text-[var(--text-3)]">标签</span>
+        <button data-kind="tag" data-filter="__clear__" class="clear-tags inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm text-[var(--text-3)] ring-1 ring-[var(--border)] transition hover:text-[var(--accent-text)] hover:ring-[var(--border-strong)]">
           <Icon name="settings" size={13} />清空
         </button>
         {hotTags.map((t) => (
@@ -96,16 +96,16 @@ const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rou
             {q.data.difficulty}
           </span>
           <span class="badge mt-0.5 shrink-0">{q.data.category}</span>
-          <h3 class="font-display font-medium leading-snug tracking-[0.04em] text-[var(--text-1)] transition group-hover:text-[var(--hal-text)]">{q.data.title}</h3>
+          <h3 class="font-semibold leading-snug text-[var(--text-1)] transition group-hover:text-[var(--accent-text)]">{q.data.title}</h3>
         </div>
         <p class="mt-3 line-clamp-2 flex-1 text-sm leading-relaxed text-[var(--text-2)]">{q.data.answer}</p>
         <div class="mt-3 flex items-center justify-between">
           <span class="flex flex-wrap gap-1">
             {q.data.tags.slice(0, 2).map((t) => (
-              <span class="badge">#{t}</span>
+              <span class="rounded bg-[var(--surface-2)] px-1.5 py-0.5 text-xs text-[var(--text-2)]">#{t}</span>
             ))}
           </span>
-          <span class="font-mono text-xs tracking-[0.08em] text-[var(--hal-text)] opacity-0 transition group-hover:opacity-100">详情 →</span>
+          <span class="text-xs font-medium text-[var(--accent-text)] opacity-0 transition group-hover:opacity-100">详情 →</span>
         </div>
       </a>
     ))}
@@ -121,8 +121,8 @@ const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rou
   const state = { cat: 'all', diff: 'all', tags: new Set() };
   const cards = Array.from(document.querySelectorAll('.faq-card'));
   const empty = document.getElementById('faq-empty');
-  const ACTIVE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm bg-[var(--hal)] px-3.5 py-1.5 text-sm font-medium text-white transition';
-  const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm bg-[var(--surface)] px-3.5 py-1.5 text-sm text-[var(--text-2)] ring-1 ring-[var(--border)] transition hover:text-[var(--hal-text)] hover:ring-[var(--border-strong)]';
+  const ACTIVE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--accent)] px-3.5 py-1.5 text-sm font-medium text-white transition';
+  const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--surface)] px-3.5 py-1.5 text-sm text-[var(--text-2)] ring-1 ring-[var(--border)] transition hover:text-[var(--accent-text)] hover:ring-[var(--border-strong)]';
 
   function apply() {
     let visible = 0;

@@ -11,356 +11,84 @@ const info = (await getCollection('info'))
 const faq = await getCollection('faq');
 const roadmaps = await getCollection('roadmaps');
 
-// 精选推荐
-const featuredToolSlugs = ['cursor', 'chatgpt', 'midjourney', 'deepseek', 'coze', 'kimi'];
-const featuredTools = featuredToolSlugs
-  .map((slug) => tools.find((t) => t.id === slug))
-  .filter(Boolean);
-
-const featuredFaqSlugs = ['what-is-rag', 'what-is-agent', 'lora', 'transformer-attention', 'rlhf', 'llm-hallucination'];
-const featuredFaq = featuredFaqSlugs
-  .map((slug) => faq.find((f) => f.id === slug))
-  .filter(Boolean);
-
-// 统计（仪表读数）
-const stats = [
-  { num: String(docs.length).padStart(3, '0'), label: 'DOCS' },
-  { num: String(tools.length).padStart(3, '0'), label: 'TOOLS' },
-  { num: String(faq.length).padStart(3, '0'), label: 'FAQ' },
-  { num: String(roadmaps.length).padStart(2, '0'), label: 'ROUTES' },
+// Hero 装饰：内容统计
+const heroStats = [
+  { n: docs.length, l: '文档' },
+  { n: tools.length, l: '工具' },
+  { n: faq.length, l: '题目' },
+  { n: roadmaps.length, l: '路线' },
 ];
 
-// 文档分类统计（Bento 预览）
-const docsByCategory = Object.entries(
-  docs.reduce<Record<string, number>>((acc, d) => {
-    acc[d.data.category] = (acc[d.data.category] || 0) + 1;
-    return acc;
-  }, {})
-).sort((a, b) => b[1] - a[1]);
-
-// 题库难度分布（Bento 预览）
-const faqDiff = { 入门: 0, 进阶: 0, 高级: 0 };
-faq.forEach((f) => {
-  const d = f.data.difficulty;
-  if (d === '入门' || d === '进阶' || d === '高级') faqDiff[d]++;
-});
-const faqTotal = faq.length || 1;
-
-// 工具预览名
-const toolPreviewNames = featuredTools.slice(0, 4).map((t: any) => t.data.title);
-
-// 资讯预览标题
-const infoPreview = info.slice(0, 2);
-
-// 栏目数据（图标 + 等宽计数）
-const columns = [
-  {
-    href: '/docs',
-    title: '官方文档',
-    icon: 'lucide:book-open',
-    desc: '大模型 API、框架、推理部署、向量库——按分类聚合，快速定位官方资料。',
-    count: `${docs.length} ENTRIES`,
-    span: 'lg:col-span-4 lg:row-span-2',
-    previewType: 'docs',
-  },
-  {
-    href: '/tools',
-    title: 'AI 工具大全',
-    icon: 'lucide:wrench',
-    desc: '编程、开发平台、智能体、聊天、大模型。',
-    count: `${tools.length} TOOLS`,
-    span: 'lg:col-span-2',
-    previewType: 'tools',
-  },
-  {
-    href: '/info',
-    title: '最新资讯',
-    icon: 'lucide:newspaper',
-    desc: '行业快讯、技术前沿、开源动态。',
-    count: `${info.length}+ ITEMS`,
-    span: 'lg:col-span-2',
-    previewType: 'info',
-  },
-  {
-    href: '/faq',
-    title: '精选面试题',
-    icon: 'lucide:circle-help',
-    desc: '大模型、机器学习、深度学习、AI 八股文。',
-    count: `${faq.length} QUESTIONS`,
-    span: 'lg:col-span-3',
-    previewType: 'faq',
-  },
-  {
-    href: '/roadmap',
-    title: '学习路线图',
-    icon: 'lucide:route',
-    desc: '应用开发、算法研究、工程化、多模态、产品商业化。',
-    count: `${roadmaps.length} ROUTES`,
-    span: 'lg:col-span-3',
-    previewType: 'roadmap',
-  },
-];
-
-const freeColor: Record<string, string> = {
-  免费: 'text-emerald-400',
-  付费: 'text-rose-400',
-  免费增值: 'text-amber-400',
-};
-const diffColor: Record<string, string> = {
-  入门: 'text-emerald-400',
-  进阶: 'text-amber-400',
-  高级: 'text-rose-400',
-};
+// AI 问答仅本地/内网可用：本地开发(DEV)始终显示；生产构建需显式设 PUBLIC_AI_ENABLED=true（如内网部署）。
+// 公开平台（如 Vercel）不设该变量，则自动隐藏 AI 入口，避免访客请求自己机器的 localhost 而报错。
+const AI_VISIBLE = import.meta.env.DEV || import.meta.env.PUBLIC_AI_ENABLED === 'true';
 ---
 
 <Layout title="首页" description="AI 开发者的一站式学习导航站：聚合文档、工具、资讯、题库与学习路线，从入门到进阶的完整路径">
-  <!-- ============ Hero：标题卡（对称居中，2001 开场字幕式） ============ -->
-  <section class="py-20 text-center sm:py-28">
-    <p class="mono-label">AI DEVELOPER NAVIGATION</p>
-
-    <h1 class="font-display mx-auto mt-6 max-w-3xl text-4xl font-medium leading-[1.2] tracking-[0.08em] text-[var(--text-1)] sm:text-6xl">
-      从入门到进阶的<br />AI 开发学习路径
-    </h1>
-
-    <p class="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-[var(--text-2)] sm:text-lg">
-      聚合散落各处的优质资源——文档、工具、资讯、题库、学习路线，结构清晰、可检索、持续更新。不用再到处收藏，一个站搞定。
-    </p>
-
-    <div class="mt-10 flex flex-wrap items-center justify-center gap-3">
-      <a href="/ai" class="btn-primary">问 AI 助手</a>
-      <a href="#explore" class="btn-ghost">开始探索</a>
-      <a href="/roadmap" class="btn-ghost">查看学习路线</a>
+  <!-- ============ Hero：渐变标语 + AI 搜索 + 统计装饰 ============ -->
+  <section class="hero-panel relative pb-12 pt-16 sm:pt-20">
+    <div class="mx-auto max-w-2xl text-center">
+      <h1 class="text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+        从入门到进阶的<br class="sm:hidden" /><span class="text-grad-accent">AI 开发学习路径</span>
+      </h1>
+      {AI_VISIBLE && (
+        <p class="mx-auto mt-4 max-w-xl text-base text-[var(--text-2)]">
+          不确定从哪入手？问 AI 助手，基于站内题库与学习路线作答，每个结论都带引用、可跳转原文。
+        </p>
+      )}
     </div>
 
-    <!-- 仪表读数：等宽三位补零 -->
-    <div class="mx-auto mt-14 flex max-w-2xl flex-wrap items-baseline justify-center gap-x-10 gap-y-4">
-      {stats.map((s) => (
-        <div class="flex flex-col items-center gap-1">
-          <span class="font-mono text-2xl font-bold tabular-nums tracking-widest text-[var(--text-1)]">{s.num}</span>
-          <span class="mono-label">{s.label}</span>
+    <!-- 单一 AI 搜索框：提交后跳转 AI 详情页（仅本地/内网可用） -->
+    {AI_VISIBLE && (
+      <form action="/ai" method="get" class="mx-auto mt-7 flex w-full max-w-2xl items-center rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1.5 transition focus-within:border-[var(--accent)]">
+        <div class="flex flex-1 items-center gap-2 pl-3 pr-2">
+          <Icon name="lucide:search" class="h-4 w-4 shrink-0 text-[var(--text-3)]" />
+          <input
+            name="q"
+            type="text"
+            placeholder="搜索 AI 开发问题，例如：什么是 RAG？"
+            autocomplete="off"
+            aria-label="搜索 AI 开发问题"
+            class="home-search-input w-full flex-1 bg-transparent py-2.5 text-sm text-[var(--text-1)] outline-none placeholder:text-[var(--text-3)]"
+          />
+        </div>
+        <button type="submit" class="btn-primary shrink-0 rounded-lg px-5">搜索</button>
+      </form>
+    )}
+
+    <!-- Hero 装饰：内容统计 -->
+    <div class="mx-auto mt-10 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
+      {heroStats.map((s) => (
+        <div class="card px-4 py-3 text-center">
+          <p class="text-2xl font-bold tabular-nums text-[var(--text-1)]">{s.n}</p>
+          <p class="mt-0.5 text-xs tracking-wide text-[var(--text-3)]">{s.l}</p>
         </div>
       ))}
     </div>
   </section>
 
-  <!-- ============ 01 / 栏目入口（巨石面板 Bento） ============ -->
-  <section id="explore" class="mt-8 scroll-mt-24">
-    <div class="mb-8 flex items-end justify-between">
-      <div class="section-head">
-        <span class="section-index">01</span>
-        <h2 class="section-title text-2xl">开始探索</h2>
-      </div>
-      <span class="mono-label hidden sm:block">五个栏目 · 完整闭环</span>
-    </div>
-
-    <div class="grid auto-rows-fr grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6">
-      {columns.map((c) => (
-        <a href={c.href} class:list={['card group flex flex-col p-6', c.span]}>
-          <div class="flex items-center justify-between gap-3">
-            <span class="flex h-9 w-9 items-center justify-center border border-[var(--border)] bg-[var(--surface-2)] text-[var(--hal-text)]">
-              <Icon name={c.icon} class="h-[18px] w-[18px]" />
-            </span>
-            <span class="mono-label">{c.count}</span>
-          </div>
-
-          <h3 class="font-display mt-4 text-lg font-medium tracking-[0.05em] text-[var(--text-1)] transition group-hover:text-[var(--hal-text)]">
-            {c.title}
-          </h3>
-          <p class="mt-1.5 text-sm leading-relaxed text-[var(--text-2)]">{c.desc}</p>
-
-          <!-- 内容化预览 -->
-          <div class="mt-auto pt-5">
-            {c.previewType === 'docs' && (
-              <div class="space-y-3">
-                <div class="flex flex-wrap gap-2">
-                  {docsByCategory.slice(0, 5).map(([cat, count]) => (
-                    <span class="border border-[var(--border)] bg-[var(--surface)] px-2 py-1 font-mono text-[11px] tracking-wide text-[var(--text-2)]">
-                      {cat} <span class="text-[var(--hal-text)]">{String(count).padStart(2, '0')}</span>
-                    </span>
-                  ))}
-                </div>
-                <span class="font-mono text-xs tracking-[0.1em] text-[var(--hal-text)]">浏览全部文档 →</span>
-              </div>
-            )}
-
-            {c.previewType === 'tools' && (
-              <div class="space-y-3">
-                <div class="flex flex-wrap gap-2">
-                  {toolPreviewNames.map((name) => (
-                    <span class="border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-xs text-[var(--text-2)]">{name}</span>
-                  ))}
-                </div>
-                <span class="font-mono text-xs tracking-[0.1em] text-[var(--hal-text)]">查看工具大全 →</span>
-              </div>
-            )}
-
-            {c.previewType === 'info' && (
-              <div class="space-y-2">
-                {infoPreview.map((item) => (
-                  <p class="truncate text-xs text-[var(--text-2)]">
-                    <span class="text-[var(--hal)]">·</span> {item.data.title}
-                  </p>
-                ))}
-                <span class="font-mono text-xs tracking-[0.1em] text-[var(--hal-text)]">阅读最新资讯 →</span>
-              </div>
-            )}
-
-            {c.previewType === 'faq' && (
-              <div class="space-y-3">
-                <div class="flex items-center gap-3 font-mono text-[11px] text-[var(--text-2)]">
-                  <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 bg-emerald-400"></span>入门 {Math.round((faqDiff['入门'] / faqTotal) * 100)}%</span>
-                  <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 bg-amber-400"></span>进阶 {Math.round((faqDiff['进阶'] / faqTotal) * 100)}%</span>
-                  <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 bg-rose-400"></span>高级 {Math.round((faqDiff['高级'] / faqTotal) * 100)}%</span>
-                </div>
-                <div class="diff-mini">
-                  <span class="bg-emerald-400" style={`width:${(faqDiff['入门'] / faqTotal) * 100}%`}></span>
-                  <span class="bg-amber-400" style={`width:${(faqDiff['进阶'] / faqTotal) * 100}%`}></span>
-                  <span class="bg-rose-400" style={`width:${(faqDiff['高级'] / faqTotal) * 100}%`}></span>
-                </div>
-                <span class="font-mono text-xs tracking-[0.1em] text-[var(--hal-text)]">去刷题 →</span>
-              </div>
-            )}
-
-            {c.previewType === 'roadmap' && (
-              <div class="space-y-3">
-                <div class="stage-progress max-w-[14rem]">
-                  {roadmaps.map((r, i) => (
-                    <>
-                      <span class="dot active"></span>
-                      {i < roadmaps.length - 1 && <span class="bar active"></span>}
-                    </>
-                  ))}
-                </div>
-                <span class="font-mono text-xs tracking-[0.1em] text-[var(--hal-text)]">选择路线开始学习 →</span>
-              </div>
-            )}
-          </div>
-        </a>
-      ))}
-    </div>
-  </section>
-
-  <!-- ============ 02 / 学习路线速览 ============ -->
+  <!-- ============ 如何使用本站 ============ -->
   <section class="mt-16">
-    <div class="mb-7 flex items-center justify-between">
-      <div class="section-head">
-        <span class="section-index">02</span>
-        <h2 class="section-title text-2xl">学习路线速览</h2>
-      </div>
-      <a href="/roadmap" class="font-mono text-xs tracking-[0.12em] text-[var(--hal-text)] transition hover:text-[var(--text-1)]">全部路线 →</a>
-    </div>
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {roadmaps.map((r) => (
-        <a href={`/roadmap/${r.id}`} class="card group flex flex-col p-5">
-          <div class="flex items-start justify-between gap-3">
-            <h3 class="font-display font-medium tracking-[0.04em] text-[var(--text-1)] transition group-hover:text-[var(--hal-text)]">{r.data.title}</h3>
-            <span class="badge shrink-0">{r.data.duration}</span>
-          </div>
-          <p class="mt-2 line-clamp-2 text-sm text-[var(--text-2)]">{r.data.target}</p>
-
-          <div class="mt-4 flex items-center gap-1.5">
-            {r.data.stages.map((_, idx) => (
-              <>
-                <span class="h-2 w-2 bg-[var(--hal)] opacity-60"></span>
-                {idx < r.data.stages.length - 1 && <span class="h-0.5 w-3 bg-white/10"></span>}
-              </>
-            ))}
-          </div>
-          <p class="mt-3 font-mono text-[11px] tracking-[0.08em] text-[var(--text-3)]">{r.data.stages.length} 阶段 · {r.data.stages.reduce((n, s) => n + s.tasks.length, 0)} 个任务</p>
-        </a>
-      ))}
-    </div>
-  </section>
-
-  <!-- ============ 03 / 精选工具 ============ -->
-  {featuredTools.length > 0 && (
-    <section class="mt-16">
-      <div class="mb-7 flex items-center justify-between">
-        <div class="section-head">
-          <span class="section-index">03</span>
-          <h2 class="section-title text-2xl">精选工具</h2>
-        </div>
-        <a href="/tools" class="font-mono text-xs tracking-[0.12em] text-[var(--hal-text)] transition hover:text-[var(--text-1)]">工具大全 →</a>
-      </div>
-      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {featuredTools.map((t) => (
-          <a href={t.data.url} target="_blank" rel="noopener" class="card group flex flex-col p-5">
-            <div class="flex items-center justify-between gap-2">
-              <h3 class="font-display font-medium tracking-[0.04em] text-[var(--text-1)] transition group-hover:text-[var(--hal-text)]">{t.data.title}</h3>
-              <span class={`shrink-0 font-mono text-xs ${freeColor[t.data.free] ?? 'text-[var(--text-3)]'}`}>{t.data.free}</span>
-            </div>
-            <p class="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-[var(--text-2)]">{t.data.description}</p>
-            <div class="mt-3 flex items-center justify-between">
-              <span class="badge">{t.data.category}</span>
-              <span class="font-mono text-xs text-[var(--hal-text)] opacity-0 transition group-hover:opacity-100">访问 ↗</span>
-            </div>
-          </a>
-        ))}
-      </div>
-    </section>
-  )}
-
-  <!-- ============ 04 / 高频面试题 ============ -->
-  {featuredFaq.length > 0 && (
-    <section class="mt-16">
-      <div class="mb-7 flex items-center justify-between">
-        <div class="section-head">
-          <span class="section-index">04</span>
-          <h2 class="section-title text-2xl">高频面试题</h2>
-        </div>
-        <a href="/faq" class="font-mono text-xs tracking-[0.12em] text-[var(--hal-text)] transition hover:text-[var(--text-1)]">题库大全 →</a>
-      </div>
-      <div class="grid gap-3 md:grid-cols-2">
-        {featuredFaq.map((q) => (
-          <a href={`/faq/${q.id}/`} class="card group flex flex-col p-5">
-            <div class="flex items-start gap-2.5">
-              <span class={`mt-0.5 shrink-0 font-mono text-xs ${diffColor[q.data.difficulty] ?? 'text-[var(--text-3)]'}`}>
-                {q.data.difficulty}
-              </span>
-              <h3 class="font-semibold leading-snug text-[var(--text-1)] transition group-hover:text-[var(--hal-text)]">{q.data.title}</h3>
-            </div>
-            <p class="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-[var(--text-2)]">{q.data.answer}</p>
-            <div class="mt-3 flex items-center justify-between">
-              <span class="badge">{q.data.category}</span>
-              <span class="font-mono text-xs text-[var(--hal-text)] opacity-0 transition group-hover:opacity-100">查看详解 →</span>
-            </div>
-          </a>
-        ))}
-      </div>
-    </section>
-  )}
-
-  <!-- ============ 05 / 如何使用本站 ============ -->
-  <section class="mt-16">
-    <div class="mb-7 flex items-end justify-center">
-      <div class="section-head">
-        <span class="section-index">05</span>
-        <h2 class="section-title text-2xl">如何使用本站</h2>
-      </div>
-    </div>
-    <div class="grid gap-4 md:grid-cols-3">
+    <h2 class="section-title text-2xl">如何使用本站</h2>
+    <div class="mt-6 grid gap-4 md:grid-cols-3">
       {[
         { title: '查文档 · 找工具', desc: '需要什么就搜什么，官方文档与 AI 工具按分类聚合，点开即用。' },
         { title: '追资讯 · 学知识', desc: '每天看看最新行业动态与技术前沿，保持信息不落后。' },
         { title: '刷题库 · 跟路线', desc: '对照学习路线图按阶段推进，用面试题检验掌握程度。' },
-      ].map((s, i) => (
+      ].map((s) => (
         <div class="card p-6">
-          <p class="mono-label">STEP {String(i + 1).padStart(2, '0')}</p>
-          <h3 class="font-display mt-3 font-medium tracking-[0.04em] text-[var(--text-1)]">{s.title}</h3>
-          <p class="mt-2 text-sm leading-relaxed text-[var(--text-2)]">{s.desc}</p>
+          <h3 class="text-lg font-semibold tracking-tight text-[var(--text-1)]">{s.title}</h3>
+          <p class="mt-1.5 text-sm leading-relaxed text-[var(--text-2)]">{s.desc}</p>
         </div>
       ))}
     </div>
   </section>
 
-  <!-- ============ 06 / 最新资讯（遥测日志式行条目） ============ -->
+  <!-- ============ 最新资讯 ============ -->
   <section class="mt-16">
     <div class="mb-5 flex items-center justify-between">
-      <div class="section-head">
-        <span class="section-index">06</span>
-        <h2 class="section-title text-2xl">最新资讯</h2>
-      </div>
-      <a href="/info" class="font-mono text-xs tracking-[0.12em] text-[var(--hal-text)] transition hover:text-[var(--text-1)]">查看全部 →</a>
+      <h2 class="section-title text-2xl">最新资讯</h2>
+      <a href="/info" class="text-sm font-medium text-[var(--accent-text)] transition hover:text-indigo-200">查看全部 →</a>
     </div>
     <div class="card overflow-hidden p-0">
       {info.map((item, i) => (
@@ -368,11 +96,10 @@ const diffColor: Record<string, string> = {
           href={`/info/${item.id}/`}
           class:list={['flex items-start gap-3 px-5 py-4 transition hover:bg-white/[0.03]', i !== 0 && 'border-t border-[var(--border)]']}
         >
-          <span class="mt-0.5 shrink-0 font-mono text-[11px] tabular-nums text-[var(--text-3)]">{String(i + 1).padStart(2, '0')}</span>
           <span class="badge mt-0.5 shrink-0">{item.data.category}</span>
           <div class="min-w-0">
             <p class="font-medium leading-snug text-[var(--text-1)]">{item.data.title}</p>
-            <p class="mt-1 font-mono text-[11px] tracking-[0.06em] text-[var(--text-3)]">{item.data.source} · {item.data.date.toLocaleDateString('zh-CN')}</p>
+            <p class="mt-1 text-sm text-[var(--text-3)]">{item.data.source} · {item.data.date.toLocaleDateString('zh-CN')}</p>
           </div>
         </a>
       ))}

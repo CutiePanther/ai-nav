@@ -1,0 +1,34 @@
+﻿
+> ai-dev-nav@0.0.1 astro
+> astro build
+
+[2m18:06:15[22m [34m[content][39m Syncing content
+[2m18:06:16[22m [34m[content][39m Synced content
+[2m18:06:16[22m [34m[types][39m Generated [2m2.00s[22m
+[2m18:06:16[22m [34m[build][39m output: [34m"static"[39m
+[2m18:06:16[22m [34m[build][39m mode: [34m"static"[39m
+[2m18:06:16[22m [34m[build][39m directory: [34mD:\AI\workspace\ai-dev-nav\dist\[39m
+[2m18:06:16[22m [34m[build][39m Collecting build info...
+[2m18:06:16[22m [34m[build][39m [32m✓ Completed in 2.09s.[39m
+[2m18:06:16[22m [34m[build][39m Building static entrypoints...
+[2m18:06:16[22m [34m[vite][39m [36m
+watching for file changes...[39m
+[2m18:06:16[22m [34m[vite][39m [36m
+build started...[39m
+node.exe : Could not find the prerender entry point in the build output. This is likely a bug in Astro.
+At D:\nodejs\npm.ps1:29 char:3
++   & $NODE_EXE $NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Could not find ...a bug in Astro.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  [1mLocation:[22m
+    [4mD:\AI\workspace\ai-dev-nav\node_modules\astro\dist\core\build\static-build.js:210:9[24m
+  [1mStack trace:[22m
+[2m    at getPrerenderEntryFileName (file:///D:/AI/workspace/ai-dev-nav/node_modules/astro/dist/core/build/static-buil
+d.js:210:9)
+    at Object.buildApp (file:///D:/AI/workspace/ai-dev-nav/node_modules/astro/dist/core/build/static-build.js:155:9)
+    at async buildEnvironments (file:///D:/AI/workspace/ai-dev-nav/node_modules/astro/dist/core/build/static-build.js:1
+96:3)
+    at async AstroBuilder.build (file:///D:/AI/workspace/ai-dev-nav/node_modules/astro/dist/core/build/index.js:160:5)
+    at async build (file:///D:/AI/workspace/ai-dev-nav/node_modules/astro/dist/core/build/index.js:50:3)[22m

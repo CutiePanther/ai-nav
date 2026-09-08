@@ -6,15 +6,18 @@ import ChatWidget from '../components/ChatWidget.astro';
 interface Props {
   title: string;
   description?: string;
-  /** 是否注入全站悬浮球 AI 助手（默认 true；/ai 独立页关掉，避免与内嵌面板重复） */
+  /** 是否注入全站悬浮球 AI 助手（默认 true；首页顶部已内嵌 AI 搜索面板时关掉，避免同名 id 冲突） */
   floatingAI?: boolean;
 }
 
 const { title, description, floatingAI = true } = Astro.props;
 const siteName = 'AI 开发学习导航';
 
+// 悬浮 AI 助手仅本地/内网可用：DEV 始终显示；生产需显式设 PUBLIC_AI_ENABLED=true（如内网部署）。
+// 公开平台（如 Vercel）不设该变量，则自动隐藏悬浮球，避免访客请求自己机器的 localhost 而报错。
+const AI_VISIBLE = import.meta.env.DEV || import.meta.env.PUBLIC_AI_ENABLED === 'true';
+
 const navLinks = [
-  { href: '/ai', label: 'AI 助手' },
   { href: '/docs', label: '文档' },
   { href: '/tools', label: '工具' },
   { href: '/info', label: '资讯' },
@@ -40,29 +43,28 @@ const path = Astro.url.pathname;
     <meta property="og:type" content="website" />
     <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
   </head>
-  <body class="flex min-h-screen flex-col">
-    <header class="sticky top-0 z-30 border-b border-[var(--border)] bg-[#050607]/90 backdrop-blur-md">
+  <body class="relative flex min-h-screen flex-col">
+    <a href="#main" class="skip-link">跳到主内容</a>
+    <header class="sticky top-0 z-30 border-b border-[var(--border)] bg-[#0b0c0f]/85 backdrop-blur-md">
       <div class="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
-        <!-- Logo：HAL 红方块 + 展示体站名 -->
-        <a href="/" class="flex shrink-0 items-center gap-2.5">
-          <span class="hal-eye h-2.5 w-2.5"></span>
-          <span class="font-display text-base font-medium tracking-[0.1em] text-[var(--text-1)] sm:text-lg">开发学习导航</span>
+        <a href="/" class="flex shrink-0 items-center gap-2 font-bold tracking-tight">
+          <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)] text-sm font-bold text-white">AI</span>
+          <span class="text-base sm:text-lg">开发学习导航</span>
         </a>
-        <!-- 桌面导航：等宽仪表标签 + active 红色下标 -->
-        <nav class="hidden shrink-0 items-center gap-0.5 md:flex">
+        <nav class="hidden shrink-0 items-center gap-1 text-sm font-medium text-[var(--text-2)] md:flex">
           {navLinks.map((l) => (
             <a
               href={l.href}
               class:list={[
-                'relative px-3 py-1.5 font-mono text-xs tracking-[0.14em] transition',
+                'relative rounded-lg px-3 py-1.5 transition',
                 (path === l.href || path.startsWith(l.href + '/'))
-                  ? 'font-bold text-[var(--text-1)]'
-                  : 'text-[var(--text-3)] hover:text-[var(--text-1)]',
+                  ? 'font-semibold text-[var(--text-1)]'
+                  : 'hover:bg-white/[0.04] hover:text-[var(--text-1)]',
               ]}
             >
               {l.label}
               {(path === l.href || path.startsWith(l.href + '/')) && (
-                <span class="absolute inset-x-3 -bottom-[13px] h-[2px] bg-[var(--hal)]"></span>
+                <span class="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-[var(--accent)]"></span>
               )}
             </a>
           ))}
@@ -72,15 +74,15 @@ const path = Astro.url.pathname;
         </div>
       </div>
       <!-- 移动端导航 -->
-      <nav class="flex items-center gap-1 overflow-x-auto px-4 pb-2 md:hidden">
+      <nav class="flex items-center gap-1 overflow-x-auto px-4 pb-2 text-sm font-medium text-[var(--text-2)] md:hidden">
         {navLinks.map((l) => (
           <a
             href={l.href}
             class:list={[
-              'shrink-0 border px-3 py-1 font-mono text-xs tracking-[0.1em] transition',
+              'shrink-0 rounded-full px-3 py-1 transition',
               (path === l.href || path.startsWith(l.href + '/'))
-                ? 'border-[var(--hal)] bg-[var(--hal)] font-bold text-white'
-                : 'border-[var(--border)] text-[var(--text-2)] hover:border-[var(--border-strong)]',
+                ? 'bg-[var(--accent)] font-semibold text-white'
+                : 'bg-white/[0.05] hover:bg-white/[0.09]',
             ]}
           >
             {l.label}
@@ -89,55 +91,57 @@ const path = Astro.url.pathname;
       </nav>
     </header>
 
-    <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10" data-pagefind-body>
+    <main id="main" class="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10" data-pagefind-body>
       <slot />
     </main>
 
     <footer class="mt-8 border-t border-[var(--border)]">
-      <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        <div class="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
-          <div class="max-w-sm">
-            <div class="flex items-center gap-2.5">
-              <span class="hal-eye h-2.5 w-2.5"></span>
-              <span class="font-display font-medium tracking-[0.1em]">AI 开发学习导航</span>
+      <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        {path === '/' && (
+          <div class="flex flex-col gap-6 py-10 sm:flex-row sm:items-start sm:justify-between">
+            <div class="max-w-sm">
+              <div class="flex items-center gap-2 font-bold">
+                <span class="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--accent)] text-xs font-bold text-white">AI</span>
+                <span>AI 开发学习导航</span>
+              </div>
+              <p class="mt-3 text-sm leading-relaxed text-[var(--text-2)]">
+                追资讯 · 查文档 · 找工具 · 刷题库 · 跟路线，AI 开发者的一站式学习导航站。
+              </p>
             </div>
-            <p class="mt-3 text-sm leading-relaxed text-[var(--text-2)]">
-              追资讯 · 查文档 · 找工具 · 刷题库 · 跟路线，AI 开发者的一站式学习导航站。
-            </p>
+            <div class="grid grid-cols-2 gap-8 text-sm sm:grid-cols-3">
+              <div>
+                <p class="font-semibold text-[var(--text-1)]">内容</p>
+                <ul class="mt-3 space-y-2 text-[var(--text-2)]">
+                  {navLinks.map((l) => (
+                    <li><a href={l.href} class="transition hover:text-[var(--text-1)]">{l.label}</a></li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p class="font-semibold text-[var(--text-1)]">说明</p>
+                <ul class="mt-3 space-y-2 text-[var(--text-2)]">
+                  <li>聚合外链 + 精选内容</li>
+                  <li>资讯构建期自动抓取</li>
+                  <li>Git 版本化维护</li>
+                </ul>
+              </div>
+              <div>
+                <p class="font-semibold text-[var(--text-1)]">技术</p>
+                <ul class="mt-3 space-y-2 text-[var(--text-2)]">
+                  <li>Astro 7</li>
+                  <li>Tailwind CSS v4</li>
+                  <li>Pagefind 搜索</li>
+                </ul>
+              </div>
+            </div>
           </div>
-          <div class="grid grid-cols-2 gap-8 text-sm sm:grid-cols-3">
-            <div>
-              <p class="mono-label">内容</p>
-              <ul class="mt-3 space-y-2 text-[var(--text-2)]">
-                {navLinks.map((l) => (
-                  <li><a href={l.href} class="transition hover:text-[var(--text-1)]">{l.label}</a></li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p class="mono-label">说明</p>
-              <ul class="mt-3 space-y-2 text-[var(--text-2)]">
-                <li>聚合外链 + 精选内容</li>
-                <li>资讯构建期自动抓取</li>
-                <li>Git 版本化维护</li>
-              </ul>
-            </div>
-            <div>
-              <p class="mono-label">技术</p>
-              <ul class="mt-3 space-y-2 text-[var(--text-2)]">
-                <li>Astro 7</li>
-                <li>Tailwind CSS v4</li>
-                <li>Pagefind 搜索</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-        <div class="mt-8 border-t border-[var(--border)] pt-6 text-center font-mono text-[11px] tracking-[0.14em] text-[var(--text-3)]">
+        )}
+        <div class="border-t border-[var(--border)] py-6 text-center text-xs text-[var(--text-3)]">
           © {new Date().getFullYear()} AI 开发学习导航 · 内容版权归原作者所有，本站仅做聚合导航
         </div>
       </div>
     </footer>
 
-    {floatingAI && <ChatWidget mode="floating" />}
+    {AI_VISIBLE && floatingAI && <ChatWidget mode="floating" />}
   </body>
 </html>

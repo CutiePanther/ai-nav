@@ -1,44 +1,21 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import ChatWidget from '../components/ChatWidget.astro';
-import { getCollection } from 'astro:content';
 
-const faqCount = (await getCollection('faq')).length;
-const roadmapCount = (await getCollection('roadmaps')).length;
+// AI 问答仅本地/内网可用：DEV 默认显示；生产需显式设 PUBLIC_AI_ENABLED=true。
+// 公开平台（如 Vercel）不设该变量，则页面仅展示「不可用」说明，不渲染聊天面板。
+const AI_VISIBLE = import.meta.env.DEV || import.meta.env.PUBLIC_AI_ENABLED === 'true';
 ---
 
 <Layout title="AI 助手" description="基于站内题库与学习路线的 AI 学习助手，带引用回答你的 AI 开发学习问题" floatingAI={false}>
-  <div class="mx-auto max-w-3xl">
-    <!-- 页头 -->
-    <header class="mb-8">
-      <span class="badge">
-        <span class="hal-eye h-1.5 w-1.5"></span>
-        AI 学习助手 · 站内知识库
-      </span>
-      <h1 class="font-display mt-4 text-3xl font-medium tracking-[0.08em] sm:text-4xl">问 AI 助手</h1>
-      <p class="mt-3 text-[var(--text-2)]">
-        基于站内 <strong class="text-[var(--text-1)]">{faqCount} 道面试题</strong> 与 <strong class="text-[var(--text-1)]">{roadmapCount} 条学习路线</strong> 作答，
-        每个结论都带引用、可跳转原文，答不上的会如实说「暂无」。
-      </p>
-    </header>
-
-    <!-- 聊天组件（内嵌形态） -->
-    <ChatWidget mode="inline" />
-
-    <!-- 能力说明 -->
-    <div class="mt-10 grid gap-3 sm:grid-cols-3">
-      {[
-        { title: '引用可溯源', desc: '回答标注 [ref:N]，点击跳转对应题库/路线原文。' },
-        { title: '只答站内内容', desc: '不编造、不引入外部知识，站内没有的明确说「暂无」。' },
-        { title: '覆盖学习闭环', desc: '从概念题到「怎么学」的路径问题都能答。' },
-      ].map((f, i) => (
-        <div class="card p-5">
-          <span class="hal-eye h-2.5 w-2.5"></span>
-          <h3 class="font-display mt-3 font-medium tracking-[0.04em] text-[var(--text-1)]">{f.title}</h3>
-          <p class="mt-2 text-sm leading-relaxed text-[var(--text-2)]">{f.desc}</p>
-          <p class="mono-label mt-3">CAP {String(i + 1).padStart(2, '0')}</p>
-        </div>
-      ))}
+  {AI_VISIBLE ? (
+    <div class="mx-auto max-w-3xl pt-6">
+      <ChatWidget mode="inline" />
     </div>
-  </div>
+  ) : (
+    <div class="mx-auto max-w-3xl pt-24 pb-16 text-center">
+      <p class="text-lg font-semibold text-[var(--text-1)]">AI 助手暂未开放</p>
+      <p class="mt-2 text-sm text-[var(--text-2)]">该功能仅在本地/内网环境可用，敬请期待公开版本。</p>
+    </div>
+  )}
 </Layout>

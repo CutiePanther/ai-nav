@@ -17,24 +17,21 @@ const tips = [
 
 <Layout title="学习路线图" description="可执行的大模型应用、算法研究、AI 工程化、多模态学习路线图：每阶段带具体任务、检验标准与实践项目">
   <header class="mb-8">
-    <h1 class="font-display text-3xl font-medium tracking-[0.08em] sm:text-4xl">学习路线图</h1>
+    <h1 class="text-3xl font-bold sm:text-4xl">学习路线图</h1>
     <p class="mt-3 max-w-2xl text-[var(--text-2)]">
       按 {roadmaps.length} 个方向规划「筑基 → 核心 → 实战 → 进阶 → 前沿」的进阶路线。每条路线、每个阶段都拆解成
-      <span class="text-[var(--hal-text)]">具体任务 + 检验标准 + 实践项目</span>，让你拿到就能照着学。
+      <span class="text-[var(--accent-text)]">具体任务 + 检验标准 + 实践项目</span>，让你拿到就能照着学。
     </p>
   </header>
 
   <!-- 如何使用 -->
   <section class="card mb-10 p-6 sm:p-8">
-    <div class="section-head">
-      <span class="section-index">01</span>
-      <h2 class="section-title text-lg text-[var(--text-1)]">如何使用这些路线图</h2>
-    </div>
+    <h2 class="text-lg font-bold text-[var(--text-1)]">如何使用这些路线图</h2>
     <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {tips.map((c) => (
-        <div class="rounded-sm border border-[var(--border)] bg-[var(--surface)] p-4">
+        <div class="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
           <div class="flex items-start gap-2.5">
-            <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-[1px] bg-[var(--hal)]"></span>
+            <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]"></span>
             <div>
               <p class="font-semibold text-[var(--text-1)]">{c.t}</p>
               <p class="mt-1 text-sm leading-relaxed text-[var(--text-2)]">{c.d}</p>
@@ -43,7 +40,7 @@ const tips = [
         </div>
       ))}
     </div>
-    <p class="mt-5 border-t border-[var(--border)] pt-4 font-mono text-[11px] tracking-[0.06em] text-[var(--text-3)]">
+    <p class="mt-5 border-t border-[var(--border)] pt-4 text-sm text-[var(--text-3)]">
       共 {roadmaps.length} 条路线 · {totalStages} 个阶段 · {totalTasks} 个学习任务，每条路线都标注了先修要求与预计周期。
     </p>
   </section>
@@ -57,8 +54,8 @@ const tips = [
       >
         <div class="relative z-10 flex items-start justify-between gap-3">
           <div>
-            <h2 class="font-display text-lg font-medium tracking-[0.04em] text-[var(--text-1)] transition group-hover:text-[var(--hal-text)]">{r.data.title}</h2>
-            <p class="mt-1 font-mono text-[11px] tracking-[0.06em] text-[var(--text-2)]">{r.data.duration}</p>
+            <h2 class="text-lg font-bold text-[var(--text-1)] transition group-hover:text-[var(--accent-text)]">{r.data.title}</h2>
+            <p class="mt-1 text-sm font-medium text-[var(--text-2)]">{r.data.duration}</p>
           </div>
           <span class="badge shrink-0">{r.data.stages.length} 阶段</span>
         </div>
@@ -75,15 +72,13 @@ const tips = [
         )}
 
         <!-- 阶段进度可视化 -->
-        <div class="relative z-10 mt-5">
-          <div class="stage-progress">
-            {r.data.stages.map((_, idx) => (
-              <>
-                <span class="dot active"></span>
-                {idx < r.data.stages.length - 1 && <span class="bar active"></span>}
-              </>
-            ))}
-          </div>
+        <div class="relative z-10 mt-5 flex items-center gap-1.5">
+          {r.data.stages.map((_, idx) => (
+            <>
+              <span class="h-2 w-2 rounded-full bg-[var(--accent)] opacity-70"></span>
+              {idx < r.data.stages.length - 1 && <span class="h-0.5 flex-1 rounded-full bg-white/10"></span>}
+            </>
+          ))}
         </div>
 
         <!-- 阶段名 chips -->
@@ -93,11 +88,11 @@ const tips = [
           ))}
         </div>
 
-        <div class="relative z-10 mt-5 flex items-center justify-between gap-3 border-t border-[var(--border)] pt-3">
-          <span class="font-mono text-[11px] tracking-[0.06em] text-[var(--text-3)]">
+        <div class="relative z-10 mt-5 flex items-center justify-between border-t border-[var(--border)] pt-3 text-sm">
+          <span class="text-[var(--text-3)]">
             {r.data.stages.length} 阶段 · {r.data.stages.reduce((n, s) => n + s.tasks.length, 0)} 个任务 · {r.data.stages.reduce((n, s) => n + s.skills.length, 0)} 项技能
           </span>
-          <span class="font-mono text-xs tracking-[0.08em] text-[var(--hal-text)] transition group-hover:translate-x-0.5">开始学习 →</span>
+          <span class="font-medium text-[var(--accent-text)] transition group-hover:translate-x-0.5">开始学习 →</span>
         </div>
       </a>
     ))}

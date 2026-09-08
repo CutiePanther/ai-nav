@@ -53,8 +53,8 @@
         const items = await Promise.all(
           search.results.slice(0, 8).map(async (r) => ({ r, data: await r.data() }))
         );
-        results.innerHTML = items.map(({ r, data }) => `
-          <a href="${r.url}" class="block px-4 py-3 transition hover:bg-white/[0.04]">
+        results.innerHTML = items.map(({ data }) => `
+          <a href="${data.url}" class="block px-4 py-3 transition hover:bg-white/[0.04]">
             <p class="text-sm font-medium text-[var(--text-1)]">${data.meta.title || '未命名'}</p>
             ${data.excerpt ? `<p class="mt-0.5 text-xs text-[var(--text-3)] line-clamp-1">${data.excerpt}</p>` : ''}
           </a>

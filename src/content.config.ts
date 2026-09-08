@@ -27,6 +27,7 @@ const info = defineCollection({
     category: z.enum(['行业快讯', '技术前沿', '开源动态', '政策产业']),
     date: z.coerce.date(),
     tags: z.array(z.string()).default([]),
+    body: z.string().optional(),      // 可选：站内正文（Readhub 等聚合源直接存本站，不跳外部）
   }),
 });
 

@@ -11,7 +11,7 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { title, source, url, summary, category, date, tags } = entry.data;
+const { title, source, url, summary, category, date, tags, body } = entry.data;
 
 const formattedDate = date.toLocaleDateString('zh-CN', {
   year: 'numeric',
@@ -34,17 +34,30 @@ const formattedDate = date.toLocaleDateString('zh-CN', {
     <h1 class="mt-4 text-2xl font-bold leading-snug text-[var(--text-1)] sm:text-3xl">{title}</h1>
 
     <div class="card mt-6 p-6 sm:p-8">
-      <p class="text-base leading-relaxed text-[var(--text-2)]">{summary}</p>
+      {body ? (
+        // 站内全文（Readhub 等聚合源）：本站直接可读，不跳外部
+        <div class="whitespace-pre-line text-base leading-relaxed text-[var(--text-1)]">{body}</div>
+      ) : (
+        <p class="text-base leading-relaxed text-[var(--text-2)]">{summary}</p>
+      )}
     </div>
 
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener"
-      class="btn-primary mt-6"
-    >
-      阅读原文 ↗
-    </a>
+    {body ? (
+      <p class="mt-6 text-sm text-[var(--text-3)]">
+        内容由
+        <span class="text-[var(--text-2)]">{source}</span>
+        聚合提供，本站收录。
+        {url && (
+          <a href={url} target="_blank" rel="noopener" class="ml-1 text-[var(--accent-text)] underline-offset-2 transition hover:underline">
+            原文出处 ↗
+          </a>
+        )}
+      </p>
+    ) : (
+      <a href={url} target="_blank" rel="noopener" class="btn-primary mt-6">
+        阅读原文 ↗
+      </a>
+    )}
 
     {tags.length > 0 && (
       <div class="mt-8 flex flex-wrap gap-1.5">

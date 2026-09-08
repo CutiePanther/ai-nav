@@ -59,10 +59,56 @@ const SOURCES = [
   },
 ];
 
+// Readhub：官方 JSON API，返回综合新闻聚合摘要（无 AI 分类参数，需本地关键词过滤）。
+// 聚合内容直接存为站内正文（body），详情页本站可读，不跳外部。
+const READHUB = {
+  api: 'https://api.readhub.cn/news',
+  source: 'Readhub',
+  category: '行业快讯',
+  max: 6,
+  // AI 定向过滤关键词（命中 title 或 summary 才入选）
+  keywords: [
+    'AI', '人工智能', '大模型', '大语言', 'AGI', 'AIGC', 'GPT', 'ChatGPT',
+    'OpenAI', 'DeepSeek', 'Claude', 'Gemini', 'Llama', '文心', '豆包',
+    'Kimi', '通义', '智谱', '多模态', '智能体', '机器学习', '深度学习',
+    '神经网络', '算力', '英伟达', 'NVIDIA', 'HuggingFace', '开源模型',
+  ],
+};
+
 const parser = new Parser({
   timeout: 15000,
   headers: { 'User-Agent': 'Mozilla/5.0 (ai-dev-nav rss fetcher)' },
 });
+
+function isAiRelated(title, summary) {
+  const text = `${title} ${summary}`;
+  return READHUB.keywords.some((k) => text.includes(k));
+}
+
+// 抓取 Readhub 综合新闻，过滤出 AI 相关，组装为统一 item 结构
+async function fetchReadHub() {
+  const resp = await fetch(READHUB.api, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (ai-dev-nav readhub fetcher)' },
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const json = await resp.json();
+  const items = [];
+  for (const it of (json.data ?? [])) {
+    const title = (it.title ?? '').trim();
+    const content = (it.summary ?? '').replace(/\s+/g, ' ').trim();
+    if (!title || !isAiRelated(title, content)) continue;
+    items.push({
+      title,
+      source: READHUB.source,
+      url: it.url ?? '',
+      summary: content.slice(0, 120),
+      category: READHUB.category,
+      date: it.publishDate ?? new Date().toISOString(),
+      body: content, // 聚合正文存站内，详情页直接可读
+    });
+  }
+  return items.slice(0, READHUB.max);
+}
 
 // 从现有 markdown 里提取已存在的标题，用于去重
 async function loadExistingTitles() {
@@ -89,6 +135,36 @@ function escapeYaml(s) {
   return s.replace(/"/g, "'").replace(/\n/g, ' ');
 }
 
+// 组装 markdown（含可选站内正文 body）
+function frontmatterOf({ title, source, url, summary, category, date, body }) {
+  const fm = [
+    '---',
+    `title: "${escapeYaml(title)}"`,
+    `source: ${source}`,
+    `url: ${url}`,
+    `summary: "${escapeYaml(summary)}"`,
+    `category: ${category}`,
+    `date: ${date}`,
+    `tags: []`,
+  ];
+  if (body) fm.push(`body: "${escapeYaml(body)}"`);
+  fm.push('---', '');
+  return fm.join('\n');
+}
+
+// 统一持久化：标题去重 + 写文件，返回新增条数
+async function persist(items, existing) {
+  let added = 0;
+  for (const item of items) {
+    const title = (item.title ?? '').trim();
+    if (!title || existing.has(title)) continue;
+    await writeFile(path.join(INFO_DIR, filenameFor(title, item.date)), frontmatterOf(item), 'utf-8');
+    existing.add(title);
+    added++;
+  }
+  return added;
+}
+
 async function main() {
   const existing = await loadExistingTitles();
   let added = 0;
@@ -98,11 +174,8 @@ async function main() {
       const feed = await parser.parseURL(src.url);
       console.log(`[rss] ${src.source}: 抓到 ${feed.items?.length ?? 0} 条`);
 
-      for (const item of (feed.items ?? []).slice(0, src.max ?? 8)) {
+      const items = (feed.items ?? []).slice(0, src.max ?? 8).map((item) => {
         const title = (item.title ?? '').trim();
-        if (!title || existing.has(title)) continue;
-
-        const link = item.link ?? '';
         let summary = (item.contentSnippet ?? item.content ?? '')
           .replace(/\s+/g, ' ')
           .trim();
@@ -111,32 +184,28 @@ async function main() {
           summary = summary.replace(/^arXiv:\S+\s+(?:Announce Type:\s*\w+\s+)?Abstract:\s*/i, '');
         }
         summary = summary.slice(0, 200);
-        const date = item.isoDate ?? item.pubDate ?? new Date().toISOString();
-        const filename = filenameFor(title, date);
-
-        // 分类推断：arxiv 归技术前沿，其余按配置
-        const category = src.category;
-
-        const frontmatter = [
-          '---',
-          `title: "${escapeYaml(title)}"`,
-          `source: ${src.source}`,
-          `url: ${link}`,
-          `summary: "${escapeYaml(summary)}"`,
-          `category: ${category}`,
-          `date: ${date}`,
-          `tags: []`,
-          '---',
-          '',
-        ].join('\n');
-
-        await writeFile(path.join(INFO_DIR, filename), frontmatter, 'utf-8');
-        existing.add(title);
-        added++;
-      }
+        return {
+          title,
+          source: src.source,
+          url: item.link ?? '',
+          summary,
+          category: src.category,
+          date: item.isoDate ?? item.pubDate ?? new Date().toISOString(),
+        };
+      });
+      added += await persist(items, existing);
     } catch (e) {
       console.warn(`[rss] ${src.source} 抓取失败，跳过：${e.message}`);
     }
+  }
+
+  // Readhub：官方 JSON API，聚合正文直接存站内（不跳外部）
+  try {
+    const items = await fetchReadHub();
+    console.log(`[rss] ${READHUB.source}: AI 相关内容 ${items.length} 条`);
+    added += await persist(items, existing);
+  } catch (e) {
+    console.warn(`[rss] ${READHUB.source} 抓取失败，跳过：${e.message}`);
   }
 
   console.log(`[rss] 完成，新增 ${added} 条资讯`);

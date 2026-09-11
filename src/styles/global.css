@@ -386,6 +386,32 @@ a {
   font-variant-numeric: tabular-nums;
 }
 
+/* 信息图容器：圆角 + 阴影 + 底部水印遮罩 */
+.info-figure {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.45);
+}
+.info-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+/* 遮盖右下角「AI 生成」水印（硬底 + 渐变过渡，不破坏构图） */
+.info-figure::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 20%;
+  height: 12%;
+  background: linear-gradient(135deg, transparent 0%, transparent 40%, var(--background) 88%, var(--background) 100%);
+  pointer-events: none;
+}
+
 /* 章节标题：左侧短苹果蓝竖条 */
 .section-title {
   position: relative;

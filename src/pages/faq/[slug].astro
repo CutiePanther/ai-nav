@@ -14,6 +14,15 @@ const { entry } = Astro.props;
 const { Content } = await render(entry);
 const { title, category, difficulty, answer, refs, tags } = entry.data;
 
+// 少数 FAQ 在解答前嵌入概念信息图（与主题强相关的少数页面）
+const heroImage = entry.id === 'attention-mechanism'
+  ? { src: '/infographics/attention.png', alt: '注意力机制：词与词互相看，Q 提问 / K 匹配 / V 内容，相关性越高看得越用力' }
+  : entry.id === 'what-is-rag'
+  ? { src: '/infographics/rag.png', alt: 'RAG 检索增强生成：让 AI 开卷考试' }
+  : entry.id === 'what-is-agent'
+  ? { src: '/infographics/agent.png', alt: 'AI Agent：会自己干活的循环' }
+  : null;
+
 const diffColor: Record<string, string> = {
   入门: 'text-emerald-400',
   进阶: 'text-amber-400',
@@ -37,6 +46,12 @@ const diffColor: Record<string, string> = {
     <div class="mt-4 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-sm leading-relaxed text-[var(--text-2)]">
       <span class="font-semibold text-[var(--accent-text)]">一句话要点：</span>{answer}
     </div>
+
+    {heroImage && (
+      <figure class="info-figure mt-6">
+        <img src={heroImage.src} alt={heroImage.alt} width="1536" height="1024" loading="lazy" />
+      </figure>
+    )}
 
     <div class="card mt-6 p-6 sm:p-8">
       <h2 class="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-[var(--text-3)]">

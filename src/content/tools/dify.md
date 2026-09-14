@@ -4,5 +4,7 @@ description: 开源 LLM 应用开发平台，可视化编排 RAG、Agent、工�
 url: https://dify.ai
 category: AI开发平台
 free: 免费
+featured: true
+popularity: 4
 tags: ["开源", "RAG", "Agent"]
 ---

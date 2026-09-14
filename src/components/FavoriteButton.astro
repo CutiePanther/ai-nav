@@ -1,0 +1,36 @@
+---
+// 收藏按钮：仅渲染标记形态，交互逻辑由 src/scripts/favorites.js 统一绑定。
+interface Props {
+  key: string;
+  title: string;
+  url: string;
+  type: 'doc' | 'tool' | 'faq';
+  class?: string;
+}
+
+const { key, title, url, type, class: className = '' } = Astro.props;
+---
+<button
+  type="button"
+  data-fav-toggle={key}
+  data-fav-title={title}
+  data-fav-url={url}
+  data-fav-type={type}
+  aria-pressed="false"
+  aria-label="收藏"
+  title="收藏"
+  class={`fav-btn flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[var(--text-3)] transition hover:bg-[var(--surface-2)] hover:text-[var(--text-1)] ${className}`}
+>
+  <svg class="h-4 w-4" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" aria-hidden="true">
+    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z" />
+  </svg>
+</button>
+
+<style>
+  .fav-btn.is-fav {
+    color: var(--accent-text);
+  }
+  .fav-btn.is-fav svg {
+    fill: currentColor;
+  }
+</style>

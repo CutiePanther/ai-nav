@@ -45,6 +45,13 @@ const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rou
     <p class="mt-3 max-w-2xl text-[var(--text-2)]">
       共 {faq.length} 道高频题，按分类、难度、标签筛选，点卡片查看结构化详解。
     </p>
+    <div class="mt-4 max-w-2xl">
+      <div class="flex items-center justify-between text-sm text-[var(--text-2)]">
+        <span id="faq-progress-text">标记题目即可统计掌握度</span>
+        <span id="faq-progress-pct" class="text-xs text-[var(--text-3)]">0%</span>
+      </div>
+      <div class="progress-track mt-1.5"><div id="faq-progress-bar" class="progress-fill" style="width:0%"></div></div>
+    </div>
   </header>
 
   <!-- 筛选栏 -->
@@ -68,6 +75,13 @@ const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rou
         {difficulties.map((d) => (
           <button data-kind="diff" data-filter={d} class={IDLE}>{d}</button>
         ))}
+      </div>
+      <!-- 掌握度 -->
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="w-12 shrink-0 text-xs font-medium text-[var(--text-3)]">状态</span>
+        <button data-kind="mastery" data-filter="all" class={ACTIVE}>全部</button>
+        <button data-kind="mastery" data-filter="mastered" class={IDLE}>已掌握</button>
+        <button data-kind="mastery" data-filter="review" class={IDLE}>待复习</button>
       </div>
       <!-- 标签 -->
       <div class="flex flex-wrap items-center gap-2">
@@ -100,6 +114,15 @@ const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rou
             <h3 class="font-semibold leading-snug text-[var(--text-1)] transition group-hover:text-[var(--accent-text)]">{q.data.title}</h3>
           </a>
           <FavoriteButton key={`faq|${q.id}`} title={q.data.title} url={`/faq/${q.id}/`} type="faq" />
+          <button
+            data-mastery-key={q.id}
+            type="button"
+            aria-label="标记掌握"
+            title="标记掌握 / 待复习"
+            class="mastery-btn shrink-0"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5" /></svg>
+          </button>
         </div>
         <p class="mt-3 line-clamp-2 flex-1 text-sm leading-relaxed text-[var(--text-2)]">{q.data.answer}</p>
         <div class="mt-3 flex items-center justify-between">
@@ -121,7 +144,7 @@ const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rou
 </Layout>
 
 <script>
-  const state = { cat: 'all', diff: 'all', tags: new Set() };
+  const state = { cat: 'all', diff: 'all', tags: new Set(), mastery: 'all' };
   const cards = Array.from(document.querySelectorAll('.faq-card'));
   const empty = document.getElementById('faq-empty');
   const ACTIVE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--accent)] px-3.5 py-1.5 text-sm font-medium text-white transition';
@@ -133,10 +156,12 @@ const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rou
       const cCat = card.dataset.category;
       const cDiff = card.dataset.difficulty;
       const cTags = JSON.parse(card.dataset.tags || '[]');
+      const cMastery = card.dataset.mastery || '';
       const okCat = state.cat === 'all' || cCat === state.cat;
       const okDiff = state.diff === 'all' || cDiff === state.diff;
       const okTag = state.tags.size === 0 || cTags.some((t) => state.tags.has(t));
-      const show = okCat && okDiff && okTag;
+      const okM = state.mastery === 'all' || cMastery === state.mastery;
+      const show = okCat && okDiff && okTag && okM;
       card.style.display = show ? '' : 'none';
       if (show) visible++;
     });
@@ -153,6 +178,9 @@ const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rou
       } else if (kind === 'diff') {
         state.diff = f;
         document.querySelectorAll('[data-kind="diff"]').forEach((c) => c.className = c.dataset.filter === f ? ACTIVE : IDLE);
+      } else if (kind === 'mastery') {
+        state.mastery = f;
+        document.querySelectorAll('[data-kind="mastery"]').forEach((c) => c.className = c.dataset.filter === f ? ACTIVE : IDLE);
       } else if (kind === 'tag') {
         if (f === '__clear__') {
           state.tags.clear();
@@ -169,9 +197,30 @@ const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rou
       apply();
     });
   });
+
+  // 供进度脚本在掌握度变化后刷新列表
+  window.__faqApply = apply;
 </script>
 
 <script>
-  // 收藏功能（本地存储）
-  import '../scripts/favorites.js';
+  // 掌握度标记 + 顶部进度条（本地存储）
+  import { initMasteryButtons, masteryCounts } from '../scripts/progress.js';
+  import '../scripts/favorites.js'; // 初始化收藏按钮
+
+  initMasteryButtons();
+
+  function renderSummary() {
+    const { mastered, review } = masteryCounts();
+    const total = document.querySelectorAll('.faq-card').length;
+    const pct = total ? Math.round((mastered / total) * 100) : 0;
+    const t = document.getElementById('faq-progress-text');
+    if (t) t.textContent = `已掌握 ${mastered} · 待复习 ${review} · 共 ${total} 题`;
+    const p = document.getElementById('faq-progress-pct');
+    if (p) p.textContent = `${pct}%`;
+    const b = document.getElementById('faq-progress-bar');
+    if (b) b.style.width = `${pct}%`;
+    if (typeof window.__faqApply === 'function') window.__faqApply();
+  }
+  renderSummary();
+  document.addEventListener('ai-nav:progresschange', renderSummary);
 </script>

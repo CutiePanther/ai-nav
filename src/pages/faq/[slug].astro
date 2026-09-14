@@ -41,6 +41,11 @@ const diffColor: Record<string, string> = {
       </span>
     </div>
 
+    <div class="mt-4 flex flex-wrap items-center gap-3">
+      <button data-mastery-key={entry.id} data-mastery-text="1" type="button" class="mastery-btn has-text">标记掌握</button>
+      <span class="text-xs text-[var(--text-3)]">点击循环：标记已掌握 → 待复习 → 取消</span>
+    </div>
+
     <h1 class="mt-4 text-2xl font-bold leading-snug text-[var(--text-1)] sm:text-3xl">{title}</h1>
 
     <div class="mt-4 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-sm leading-relaxed text-[var(--text-2)]">
@@ -87,3 +92,8 @@ const diffColor: Record<string, string> = {
     )}
   </article>
 </Layout>
+
+<script>
+  import { initMasteryButtons } from '../../scripts/progress.js';
+  initMasteryButtons();
+</script>

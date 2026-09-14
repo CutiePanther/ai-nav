@@ -60,6 +60,14 @@ const kindLabel: Record<string, string> = {
         <span class="rounded-full bg-[var(--surface-2)] px-3 py-1">{totalTasks} 个学习任务</span>
         <span class="rounded-full bg-[var(--surface-2)] px-3 py-1">{totalSkills} 项核心技能</span>
       </div>
+
+      <!-- 阶段完成进度 -->
+      <div class="relative z-10 mx-auto mt-5 max-w-md">
+        <div class="flex items-center justify-between text-xs text-[var(--text-3)]">
+          <span id="rm-progress-text">已完成 0 / {roadmap.data.stages.length} 阶段</span>
+        </div>
+        <div class="progress-track mt-1.5"><div id="rm-progress-bar" class="progress-fill" style="width:0%"></div></div>
+      </div>
     </div>
   </header>
 
@@ -83,15 +91,18 @@ const kindLabel: Record<string, string> = {
 
     <div class="space-y-8">
       {roadmap.data.stages.map((stage, i) => (
-        <div class="relative flex gap-5">
+        <div class="roadmap-stage relative flex gap-5">
           <!-- 节点圆点 -->
-          <div class="relative z-10 flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-lg font-bold text-white">
+          <div class="stage-node relative z-10 flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-lg font-bold text-white">
             {i + 1}
           </div>
-          <div class="card flex-1 p-6">
+          <div class="stage-card card flex-1 p-6">
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <h2 class="font-bold text-[var(--text-1)]">{stage.name}</h2>
-              <span class="badge"><Icon name="clock" size={12} />{stage.time}</span>
+              <h2 class="stage-name font-bold text-[var(--text-1)]">{stage.name}</h2>
+              <div class="flex items-center gap-2">
+                <span class="badge"><Icon name="clock" size={12} />{stage.time}</span>
+                <button data-stage-done data-roadmap={roadmap.id} data-stage-idx={i} type="button" class="stage-done-btn">标记完成</button>
+              </div>
             </div>
             <p class="mt-1.5 text-sm leading-relaxed text-[var(--text-2)]">{stage.desc}</p>
 
@@ -154,3 +165,8 @@ const kindLabel: Record<string, string> = {
     </div>
   </div>
 </Layout>
+
+<script>
+  import { initRoadmapDetail } from '../../scripts/progress.js';
+  initRoadmapDetail(roadmap.id, roadmap.data.stages.length);
+</script>

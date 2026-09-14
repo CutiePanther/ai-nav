@@ -3,88 +3,141 @@ import Layout from '../layouts/Layout.astro';
 import FavoriteButton from '../components/FavoriteButton.astro';
 import { getCollection } from 'astro:content';
 
-const [docs, tools, faq] = await Promise.all([
+const [docs, tools, faq, roadmaps] = await Promise.all([
   getCollection('docs'),
   getCollection('tools'),
   getCollection('faq'),
+  getCollection('roadmaps'),
 ]);
 ---
-<Layout title="我的收藏" description="在文档、工具、题库页面点 ☆ 收藏的内容，汇总保存在本机浏览器。">
+<Layout title="我的学习中心" description="收藏的文档/工具/题库、题库掌握度与学习路线进度，统一汇总保存在本机浏览器。">
   <header class="mb-6">
-    <h1 class="text-3xl font-bold sm:text-4xl">我的收藏</h1>
+    <h1 class="text-3xl font-bold sm:text-4xl">我的学习中心</h1>
     <p class="mt-3 max-w-2xl text-[var(--text-2)]">
-      在「文档 / 工具 / 题库」页面点 ☆ 收藏，这里统一汇总。收藏保存在本机浏览器，换设备不会同步。
+      收藏、题库掌握度与路线学习进度在这里汇总。所有进度保存在本机浏览器，换设备不会同步。
     </p>
   </header>
 
-  <p id="fav-count" class="mb-4 text-sm text-[var(--text-2)]"></p>
-
-  <div id="fav-empty" class="card hidden p-12 text-center">
-    <p class="text-[var(--text-2)]">还没有收藏内容。</p>
-    <div class="mt-4 flex items-center justify-center gap-4 text-sm">
-      <a href="/docs" class="font-medium text-[var(--accent-text)] hover:underline">逛文档 →</a>
-      <a href="/tools" class="font-medium text-[var(--accent-text)] hover:underline">逛工具 →</a>
-      <a href="/faq" class="font-medium text-[var(--accent-text)] hover:underline">逛题库 →</a>
+  <!-- ===== 题库掌握度 ===== -->
+  <section class="mb-10" id="mastery-section">
+    <div class="mb-3 flex items-center justify-between">
+      <h2 class="text-xl font-bold text-[var(--text-1)]">题库掌握度</h2>
+      <span id="mastery-count" class="text-sm text-[var(--text-3)]"></span>
     </div>
-  </div>
+    <div id="mastery-empty" class="card hidden p-8 text-center text-sm text-[var(--text-2)]">
+      尚未标记任何题目。去
+      <a href="/faq" class="font-medium text-[var(--accent-text)] hover:underline">题库</a>
+      点 ✓ 标记「已掌握 / 待复习」。
+    </div>
+    <div class="grid gap-3 sm:grid-cols-2">
+      {faq.map((q) => (
+        <div data-mastery-item={q.id} class="fav-row card hidden items-center justify-between gap-3 p-4">
+          <a href={`/faq/${q.id}/`} class="min-w-0">
+            <p class="truncate font-semibold text-[var(--text-1)] transition hover:text-[var(--accent-text)]">{q.data.title}</p>
+            <p class="truncate text-xs text-[var(--text-3)]">{q.data.difficulty} · {q.data.category}</p>
+          </a>
+          <span class="mastery-tag shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium"></span>
+        </div>
+      ))}
+    </div>
+  </section>
 
-  <div id="fav-groups" class="space-y-10">
-    <section data-fav-group="doc">
-      <h2 class="mb-3 text-xl font-bold text-[var(--text-1)]">文档</h2>
-      <div class="grid gap-3 sm:grid-cols-2">
-        {docs.map((d) => (
-          <div data-fav-item={`doc|${d.id}`} class="fav-row card flex items-center justify-between gap-3 p-4">
-            <a href={d.data.url} target="_blank" rel="noopener" class="min-w-0">
-              <p class="truncate font-semibold text-[var(--text-1)] transition hover:text-[var(--accent-text)]">{d.data.title}</p>
-              <p class="truncate text-xs text-[var(--text-3)]">{d.data.description}</p>
-            </a>
-            <FavoriteButton key={`doc|${d.id}`} title={d.data.title} url={d.data.url} type="doc" class="!h-7 !w-7" />
+  <!-- ===== 路线学习进度 ===== -->
+  <section class="mb-10">
+    <h2 class="mb-3 text-xl font-bold text-[var(--text-1)]">路线学习进度</h2>
+    <div class="space-y-3">
+      {roadmaps.map((r) => (
+        <a
+          href={`/roadmap/${r.id}`}
+          data-rm-id={r.id}
+          data-rm-total={r.data.stages.length}
+          class="fav-row card block p-4"
+        >
+          <div class="flex items-center justify-between gap-3">
+            <span class="truncate font-semibold text-[var(--text-1)] transition hover:text-[var(--accent-text)]">{r.data.title}</span>
+            <span data-rm-label={r.id} class="shrink-0 text-xs text-[var(--text-3)]">0 / {r.data.stages.length} 阶段 · 0%</span>
           </div>
-        ))}
-      </div>
-    </section>
+          <div class="progress-track mt-2"><div data-rm-bar={r.id} class="progress-fill" style="width:0%"></div></div>
+          <p class="mt-1.5 text-xs text-[var(--text-3)]">{r.data.target}</p>
+        </a>
+      ))}
+    </div>
+  </section>
 
-    <section data-fav-group="tool">
-      <h2 class="mb-3 text-xl font-bold text-[var(--text-1)]">工具</h2>
-      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {tools.map((t) => (
-          <div data-fav-item={`tool|${t.id}`} class="fav-row card flex items-center justify-between gap-3 p-4">
-            <a href={t.data.url} target="_blank" rel="noopener" class="min-w-0">
-              <p class="truncate font-semibold text-[var(--text-1)] transition hover:text-[var(--accent-text)]">{t.data.title}</p>
-              <p class="truncate text-xs text-[var(--text-3)]">{t.data.category} · {t.data.description}</p>
-            </a>
-            <FavoriteButton key={`tool|${t.id}`} title={t.data.title} url={t.data.url} type="tool" class="!h-7 !w-7" />
-          </div>
-        ))}
-      </div>
-    </section>
+  <!-- ===== 收藏 ===== -->
+  <section id="fav-section">
+    <h2 class="mb-3 text-xl font-bold text-[var(--text-1)]">收藏</h2>
+    <p id="fav-count" class="mb-4 text-sm text-[var(--text-2)]"></p>
 
-    <section data-fav-group="faq">
-      <h2 class="mb-3 text-xl font-bold text-[var(--text-1)]">题库</h2>
-      <div class="grid gap-3 sm:grid-cols-2">
-        {faq.map((q) => (
-          <div data-fav-item={`faq|${q.id}`} class="fav-row card flex items-center justify-between gap-3 p-4">
-            <a href={`/faq/${q.id}/`} class="min-w-0">
-              <p class="truncate font-semibold text-[var(--text-1)] transition hover:text-[var(--accent-text)]">{q.data.title}</p>
-              <p class="truncate text-xs text-[var(--text-3)]">{q.data.category} · {q.data.difficulty}</p>
-            </a>
-            <FavoriteButton key={`faq|${q.id}`} title={q.data.title} url={`/faq/${q.id}/`} type="faq" class="!h-7 !w-7" />
-          </div>
-        ))}
+    <div id="fav-empty" class="card hidden p-12 text-center">
+      <p class="text-[var(--text-2)]">还没有收藏内容。</p>
+      <div class="mt-4 flex items-center justify-center gap-4 text-sm">
+        <a href="/docs" class="font-medium text-[var(--accent-text)] hover:underline">逛文档 →</a>
+        <a href="/tools" class="font-medium text-[var(--accent-text)] hover:underline">逛工具 →</a>
+        <a href="/faq" class="font-medium text-[var(--accent-text)] hover:underline">逛题库 →</a>
       </div>
-    </section>
-  </div>
+    </div>
+
+    <div id="fav-groups" class="space-y-10">
+      <section data-fav-group="doc">
+        <h3 class="mb-3 text-lg font-bold text-[var(--text-1)]">文档</h3>
+        <div class="grid gap-3 sm:grid-cols-2">
+          {docs.map((d) => (
+            <div data-fav-item={`doc|${d.id}`} class="fav-row card flex items-center justify-between gap-3 p-4">
+              <a href={d.data.url} target="_blank" rel="noopener" class="min-w-0">
+                <p class="truncate font-semibold text-[var(--text-1)] transition hover:text-[var(--accent-text)]">{d.data.title}</p>
+                <p class="truncate text-xs text-[var(--text-3)]">{d.data.description}</p>
+              </a>
+              <FavoriteButton key={`doc|${d.id}`} title={d.data.title} url={d.data.url} type="doc" class="!h-7 !w-7" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section data-fav-group="tool">
+        <h3 class="mb-3 text-lg font-bold text-[var(--text-1)]">工具</h3>
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {tools.map((t) => (
+            <div data-fav-item={`tool|${t.id}`} class="fav-row card flex items-center justify-between gap-3 p-4">
+              <a href={t.data.url} target="_blank" rel="noopener" class="min-w-0">
+                <p class="truncate font-semibold text-[var(--text-1)] transition hover:text-[var(--accent-text)]">{t.data.title}</p>
+                <p class="truncate text-xs text-[var(--text-3)]">{t.data.category} · {t.data.description}</p>
+              </a>
+              <FavoriteButton key={`tool|${t.id}`} title={t.data.title} url={t.data.url} type="tool" class="!h-7 !w-7" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section data-fav-group="faq">
+        <h3 class="mb-3 text-lg font-bold text-[var(--text-1)]">题库</h3>
+        <div class="grid gap-3 sm:grid-cols-2">
+          {faq.map((q) => (
+            <div data-fav-item={`faq|${q.id}`} class="fav-row card flex items-center justify-between gap-3 p-4">
+              <a href={`/faq/${q.id}/`} class="min-w-0">
+                <p class="truncate font-semibold text-[var(--text-1)] transition hover:text-[var(--accent-text)]">{q.data.title}</p>
+                <p class="truncate text-xs text-[var(--text-3)]">{q.data.category} · {q.data.difficulty}</p>
+              </a>
+              <FavoriteButton key={`faq|${q.id}`} title={q.data.title} url={`/faq/${q.id}/`} type="faq" class="!h-7 !w-7" />
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  </section>
 </Layout>
 
 <script>
   import { loadFavorites } from '../scripts/favorites.js';
   import '../scripts/favorites.js'; // 初始化收藏按钮
+  import { getMastery, masteryCounts, paintRoadmapCards } from '../scripts/progress.js';
 
+  // —— 收藏 ——
   const countEl = document.getElementById('fav-count');
   const emptyEl = document.getElementById('fav-empty');
   const sections = Array.from(document.querySelectorAll('[data-fav-group]'));
 
-  function render() {
+  function renderFav() {
     const keys = new Set(loadFavorites().map((f) => f.key));
     let shown = 0;
     document.querySelectorAll('[data-fav-item]').forEach((el) => {
@@ -104,7 +157,33 @@ const [docs, tools, faq] = await Promise.all([
       countEl.textContent = `共 ${shown} 项收藏`;
     }
   }
+  renderFav();
+  document.addEventListener('ai-nav:favchange', renderFav);
 
-  render();
-  document.addEventListener('ai-nav:favchange', render);
+  // —— 题库掌握度 ——
+  function renderMastery() {
+    const { mastered, review } = masteryCounts();
+    const rows = document.querySelectorAll('[data-mastery-item]');
+    let shown = 0;
+    rows.forEach((row) => {
+      const st = getMastery(row.dataset.masteryItem);
+      const tag = row.querySelector('.mastery-tag');
+      if (st) {
+        row.classList.remove('hidden');
+        row.classList.add('flex');
+        tag.textContent = st === 'mastered' ? '已掌握' : '待复习';
+        tag.className = `mastery-tag shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+          st === 'mastered' ? 'bg-emerald-500/15 text-emerald-500' : 'bg-amber-500/15 text-amber-500'
+        }`;
+        shown++;
+      } else {
+        row.classList.add('hidden');
+      }
+    });
+    document.getElementById('mastery-empty').classList.toggle('hidden', shown > 0);
+    document.getElementById('mastery-count').textContent = `已掌握 ${mastered} · 待复习 ${review}`;
+  }
+  renderMastery();
+  paintRoadmapCards();
+  document.addEventListener('ai-nav:progresschange', () => { renderMastery(); paintRoadmapCards(); });
 </script>

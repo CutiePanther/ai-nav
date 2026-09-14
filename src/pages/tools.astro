@@ -80,6 +80,7 @@ const issueUrl = (name: string) => `${ISSUE_BASE}?title=${encodeURIComponent(`�
       class="shrink-0 cursor-pointer rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 text-sm text-[var(--text-2)] outline-none transition focus:border-[var(--ring)]"
     >
       <option value="default" class="bg-[var(--background)] text-[var(--text-1)]">默认排序</option>
+      <option value="hot" class="bg-[var(--background)] text-[var(--text-1)]">热度优先</option>
       <option value="free" class="bg-[var(--background)] text-[var(--text-1)]">免费优先</option>
       <option value="name" class="bg-[var(--background)] text-[var(--text-1)]">名称 A-Z</option>
     </select>
@@ -89,6 +90,9 @@ const issueUrl = (name: string) => `${ISSUE_BASE}?title=${encodeURIComponent(`�
   <div class="sticky top-16 z-20 -mx-4 mb-6 bg-[var(--background)]/85 px-4 py-3 backdrop-blur-md sm:top-[68px]">
     <div class="flex flex-wrap gap-2" id="filter-bar">
       <button data-filter="all" class={ACTIVE}>全部</button>
+      <button data-filter="__featured__" class={IDLE}>
+        <Icon name="star" size={14} />精选
+      </button>
       {categories.map((c) => (
         <button data-filter={c} class={IDLE}>
           <Icon name={catMeta[c].icon} size={14} />{c}
@@ -104,12 +108,21 @@ const issueUrl = (name: string) => `${ISSUE_BASE}?title=${encodeURIComponent(`�
         data-category={t.data.category}
         data-free={t.data.free}
         data-title={t.data.title}
+        data-featured={t.data.featured ? 'true' : 'false'}
+        data-popularity={t.data.popularity}
+        data-cmp-key={t.id}
+        data-url={t.data.url}
+        data-desc={t.data.description}
+        data-tags={JSON.stringify(t.data.tags)}
         data-search={(t.data.title + ' ' + t.data.description + ' ' + t.data.category + ' ' + t.data.tags.join(' ')).toLowerCase()}
         class="tool-card card card-lift group flex flex-col p-5"
       >
         <div class="flex items-start justify-between gap-2">
           <a href={t.data.url} target="_blank" rel="noopener" class="flex min-w-0 items-center gap-1.5 font-semibold leading-snug text-[var(--text-1)] transition group-hover:text-[var(--accent-text)]">
             <span class="truncate">{t.data.title}</span>
+            {t.data.featured && (
+              <span class="shrink-0 rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[10px] font-medium text-white">精选</span>
+            )}
             {isFresh(t.data.updated) && (
               <span class="shrink-0 rounded-full bg-[var(--accent)]/12 px-1.5 py-0.5 text-[10px] font-medium text-[var(--accent-text)]">更新</span>
             )}
@@ -127,6 +140,20 @@ const issueUrl = (name: string) => `${ISSUE_BASE}?title=${encodeURIComponent(`�
             ))}
           </span>
           <span class="flex shrink-0 items-center gap-2">
+            <button
+              data-cmp-key={t.id}
+              type="button"
+              aria-pressed="false"
+              aria-label={`加入对比：${t.data.title}`}
+              title="加入对比"
+              class="cmp-toggle flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--border)] text-[var(--text-3)] transition hover:border-[var(--accent-text)] hover:text-[var(--accent-text)]"
+            >
+              <span class="flex gap-[2px]" aria-hidden="true">
+                <span class="h-3 w-1 rounded-sm bg-current"></span>
+                <span class="h-3 w-1 rounded-sm bg-current"></span>
+                <span class="h-3 w-1 rounded-sm bg-current"></span>
+              </span>
+            </button>
             <FavoriteButton key={`tool|${t.id}`} title={t.data.title} url={t.data.url} type="tool" />
             <a href={t.data.url} target="_blank" rel="noopener" class="font-medium text-[var(--accent-text)] hover:underline">访问 ↗</a>
             <a href={issueUrl(t.data.title)} target="_blank" rel="noopener" title="纠错 / 反馈" class="transition hover:text-[var(--text-1)] hover:underline">纠错</a>
@@ -139,6 +166,25 @@ const issueUrl = (name: string) => `${ISSUE_BASE}?title=${encodeURIComponent(`�
   <!-- 空状态 -->
   <div id="tool-empty" class="card mt-8 hidden p-12 text-center">
     <p class="text-[var(--text-2)]">没有匹配的工具，试试换个关键词或分类。</p>
+  </div>
+
+  <!-- 对比浮条 -->
+  <div id="cmp-bar" class="fixed bottom-4 left-1/2 z-40 hidden -translate-x-1/2 items-center gap-3 rounded-full border border-[var(--border)] bg-[var(--card)] py-2 pl-4 pr-2 text-sm text-[var(--text-1)] shadow-2xl">
+    <span id="cmp-count">已选 0 / 4</span>
+    <button id="cmp-clear" type="button" class="rounded-full px-3 py-1.5 text-[var(--text-3)] transition hover:bg-[var(--surface-2)] hover:text-[var(--text-1)]">清空</button>
+    <button id="cmp-run" type="button" disabled class="rounded-full bg-[var(--accent)] px-4 py-1.5 font-medium text-white opacity-50 transition enabled:opacity-100">开始对比</button>
+  </div>
+
+  <!-- 对比浮层 -->
+  <div id="cmp-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label="工具对比">
+    <div class="card max-h-[85vh] w-full max-w-4xl overflow-auto p-6">
+      <div class="mb-4 flex items-center justify-between gap-3">
+        <h3 class="text-lg font-bold text-[var(--text-1)]">工具对比</h3>
+        <button id="cmp-close" type="button" aria-label="关闭" class="flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-2)] transition hover:bg-[var(--surface-2)] hover:text-[var(--text-1)]">✕</button>
+      </div>
+      <div id="cmp-table" class="overflow-x-auto"></div>
+      <p id="cmp-hint" class="mt-4 text-center text-sm text-[var(--text-3)]">对比仅在当前页面会话内有效，最多同时对比 4 个工具。</p>
+    </div>
   </div>
 </Layout>
 
@@ -158,7 +204,9 @@ const issueUrl = (name: string) => `${ISSUE_BASE}?title=${encodeURIComponent(`�
     const q = searchInput.value.trim().toLowerCase();
     const visible = [];
     cards.forEach((card) => {
-      const matchCat = activeCat === 'all' || card.dataset.category === activeCat;
+      let matchCat;
+      if (activeCat === '__featured__') matchCat = card.dataset.featured === 'true';
+      else matchCat = activeCat === 'all' || card.dataset.category === activeCat;
       const matchQ = !q || card.dataset.search.includes(q);
       const show = matchCat && matchQ;
       card.style.display = show ? '' : 'none';
@@ -170,6 +218,8 @@ const issueUrl = (name: string) => `${ISSUE_BASE}?title=${encodeURIComponent(`�
     if (order === 'free') {
       const rank = { '免费': 0, '免费增值': 1, '付费': 2 };
       visible.sort((a, b) => rank[a.dataset.free] - rank[b.dataset.free]);
+    } else if (order === 'hot') {
+      visible.sort((a, b) => (Number(b.dataset.popularity) - Number(a.dataset.popularity)) || a.dataset.title.localeCompare(b.dataset.title, 'zh'));
     } else if (order === 'name') {
       visible.sort((a, b) => a.dataset.title.localeCompare(b.dataset.title, 'zh'));
     }
@@ -189,6 +239,118 @@ const issueUrl = (name: string) => `${ISSUE_BASE}?title=${encodeURIComponent(`�
 
   searchInput.addEventListener('input', apply);
   sortSelect.addEventListener('change', apply);
+</script>
+
+<script>
+  // —— 工具对比（会话内选择，最多 4 个）——
+  const MAX_CMP = 4;
+  const bar = document.getElementById('cmp-bar');
+  const countEl = document.getElementById('cmp-count');
+  const runBtn = document.getElementById('cmp-run');
+  const clearBtn = document.getElementById('cmp-clear');
+  const overlay = document.getElementById('cmp-overlay');
+  const table = document.getElementById('cmp-table');
+  const closeBtn = document.getElementById('cmp-close');
+  const cmpCards = Array.from(document.querySelectorAll('.tool-card'));
+  const cardByKey = new Map(cmpCards.map((c) => [c.dataset.cmpKey, c]));
+  const toggles = Array.from(document.querySelectorAll('.cmp-toggle'));
+  const selected = new Set(); // 选中的 tool id
+
+  function paintToggle(btn, on) {
+    btn.classList.toggle('cmp-on', on);
+    btn.classList.toggle('border-[var(--accent-text)]', on);
+    btn.classList.toggle('text-[var(--accent-text)]', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    const card = cardByKey.get(btn.dataset.cmpKey);
+    if (card) card.classList.toggle('ring-2', on);
+  }
+
+  function syncBar() {
+    const n = selected.size;
+    const show = n > 0;
+    bar.classList.toggle('hidden', !show);
+    bar.classList.toggle('flex', show);
+    countEl.textContent = `已选 ${n} / ${MAX_CMP}`;
+    runBtn.disabled = n < 2;
+  }
+
+  function buildTable() {
+    const rows = [
+      ['工具', (c) => `<a href="${c.dataset.url}" target="_blank" rel="noopener" class="font-bold text-[var(--accent-text)] hover:underline">${c.dataset.title}</a>`],
+      ['分类', (c) => c.dataset.category],
+      ['收费', (c) => c.dataset.free],
+      ['精选', (c) => (c.dataset.featured === 'true' ? '✓' : '—')],
+      ['标签', (c) => (JSON.parse(c.dataset.tags || '[]').map((t) => t).join('、') || '—')],
+      ['简介', (c) => `<p class="text-sm leading-relaxed text-[var(--text-2)]">${c.dataset.desc}</p>`],
+    ];
+    let html = '<table class="w-full border-collapse text-left text-sm text-[var(--text-1)]">';
+    html += '<thead><tr><th class="border-b border-[var(--border)] px-3 py-2 font-semibold">指标</th>';
+    html += selectedKeys().map((k) => {
+      const c = cardByKey.get(k)?.dataset;
+      return `<th class="border-b border-[var(--border)] px-3 py-2 font-semibold">${c ? c.title : k}</th>`;
+    }).join('');
+    html += '</tr></thead>';
+    html += '<tbody>';
+    rows.forEach(([label, fn]) => {
+      html += `<tr><td class="whitespace-nowrap border-b border-[var(--border)] px-3 py-2 font-medium text-[var(--text-3)]">${label}</td>`;
+      selectedKeys().forEach((k) => {
+        const c = cardByKey.get(k);
+        html += `<td class="border-b border-[var(--border)] px-3 py-2">${c ? fn(c) : '—'}</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    table.innerHTML = html;
+  }
+
+  function selectedKeys() {
+    return Array.from(selected);
+  }
+
+  function openOverlay() {
+    if (selected.size < 2) return;
+    buildTable();
+    overlay.classList.remove('hidden');
+    overlay.classList.add('flex');
+  }
+
+  function closeOverlay() {
+    overlay.classList.add('hidden');
+    overlay.classList.remove('flex');
+  }
+
+  function clearAll() {
+    selected.clear();
+    toggles.forEach((b) => paintToggle(b, false));
+    syncBar();
+  }
+
+  toggles.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const k = btn.dataset.cmpKey;
+      if (selected.has(k)) {
+        selected.delete(k);
+        paintToggle(btn, false);
+      } else {
+        if (selected.size >= MAX_CMP) {
+          countEl.textContent = `最多选 ${MAX_CMP} 个`;
+          return;
+        }
+        selected.add(k);
+        paintToggle(btn, true);
+      }
+      syncBar();
+    });
+  });
+
+  runBtn.addEventListener('click', openOverlay);
+  clearBtn.addEventListener('click', clearAll);
+  closeBtn.addEventListener('click', closeOverlay);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeOverlay(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeOverlay(); });
+
+  // 页面初始时若有滚动则隐藏浮条避免遮挡，保持简单——浮条常驻底部即可
 </script>
 
 <script>

@@ -4,5 +4,7 @@ description: GitHub 官方 AI 编程助手，支持代码补全、聊天问答�
 url: https://github.com/features/copilot
 category: AI编程
 free: 付费
+featured: true
+popularity: 5
 tags: ["代码补全", "AI编程"]
 ---

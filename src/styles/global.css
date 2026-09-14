@@ -521,6 +521,111 @@ a {
   background: transparent;
 }
 
+/* ===== 学习进度：题库掌握度按钮 ===== */
+.mastery-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 28px;
+  min-width: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.mastery-btn + .mastery-btn {
+  margin-left: 4px;
+}
+.mastery-btn.is-idle:hover {
+  color: var(--accent-text);
+  border-color: var(--border-strong);
+}
+.mastery-btn.is-mastered {
+  color: #fff;
+  background: #16a34a;
+  border-color: #16a34a;
+}
+.mastery-btn.is-mastered:hover {
+  background: #15803d;
+  color: #fff;
+}
+.mastery-btn.is-review {
+  color: #b45309;
+  border-color: #d69e2e;
+  background: rgba(214, 158, 46, 0.12);
+}
+html.dark .mastery-btn.is-review {
+  color: #fbbf24;
+}
+
+.mastery-btn.is-mastered svg {
+  color: #fff;
+}
+.mastery-btn.has-text {
+  min-width: 0;
+}
+
+/* ===== 学习进度：路线阶段完成 ===== */
+.roadmap-stage .stage-node,
+.roadmap-stage .stage-card {
+  transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+}
+.roadmap-stage.is-done .stage-card {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.roadmap-stage.is-done .stage-node {
+  background: #16a34a;
+}
+.roadmap-stage.is-done .stage-name {
+  color: var(--accent-text);
+}
+.stage-done-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.stage-done-btn:hover {
+  color: var(--accent-text);
+  border-color: var(--border-strong);
+}
+.stage-done-btn.is-done {
+  color: #fff;
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
+/* 进度条（薄） */
+.progress-track {
+  height: 5px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--border);
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
 /* ===== 题库详细解答排版（markdown 渲染）===== */
 .prose-answer {
   line-height: 1.85;

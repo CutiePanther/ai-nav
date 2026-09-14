@@ -4,5 +4,7 @@ description: AI 原生代码编辑器，深度集成 GPT/Claude，支持对话�
 url: https://www.cursor.com
 category: AI编程
 free: 免费增值
+featured: true
+popularity: 5
 tags: ["代码编辑器", "AI编程"]
 ---

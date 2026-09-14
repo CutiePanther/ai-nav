@@ -4,5 +4,7 @@ description: AI 原生搜索引擎，实时联网并附引用来源，答案可�
 url: https://www.perplexity.ai
 category: AI搜索引擎
 free: 免费增值
+featured: true
+popularity: 4
 tags: ["AI搜索", "联网"]
 ---

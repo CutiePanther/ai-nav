@@ -44,6 +44,8 @@ const tools = defineCollection({
       'AI聊天', 'AI音频', 'AI大模型', 'AI学习平台', 'AI搜索引擎', 'AI编程',
     ]),
     free: z.enum(['免费', '付费', '免费增值']).default('免费'),
+    featured: z.boolean().default(false),    // 精选（编辑权重，用于「精选」筛选与推荐）
+    popularity: z.number().min(1).max(5).default(3), // 热度评分（编辑权重，用于热度排序）
     updated: z.coerce.date().optional(),      // 最近更新日期（近 90 天在列表打「更新」角标）
     tags: z.array(z.string()).default([]),
   }),

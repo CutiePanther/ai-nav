@@ -4,5 +4,7 @@ description: Anthropic 出品，Claude 系列模型，以长上下文、代码�
 url: https://claude.ai
 category: AI聊天
 free: 免费增值
+featured: true
+popularity: 5
 tags: ["Claude", "对话"]
 ---

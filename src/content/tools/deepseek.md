@@ -4,5 +4,7 @@ description: 深度求索出品，以极高性价比与开源著称，DeepSeek-V
 url: https://www.deepseek.com
 category: AI聊天
 free: 免费
+featured: true
+popularity: 5
 tags: ["DeepSeek", "开源", "推理"]
 ---

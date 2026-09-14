@@ -54,6 +54,8 @@ const tips = [
     {roadmaps.map((r) => (
       <a
         href={`/roadmap/${r.id}`}
+        data-rm-id={r.id}
+        data-rm-total={r.data.stages.length}
         class="card card-lift group relative flex flex-col overflow-hidden p-6"
       >
         <div class="relative z-10 flex items-start justify-between gap-3">
@@ -98,7 +100,21 @@ const tips = [
           </span>
           <span class="font-medium text-[var(--accent-text)] transition group-hover:translate-x-0.5">开始学习 →</span>
         </div>
+
+        <!-- 阶段完成进度（客户端实时） -->
+        <div class="relative z-10 mt-4">
+          <div class="flex items-center justify-between text-xs text-[var(--text-3)]">
+            <span data-rm-label={r.id}>0 / {r.data.stages.length} 阶段 · 0%</span>
+          </div>
+          <div class="progress-track mt-1.5"><div data-rm-bar={r.id} class="progress-fill" style="width:0%"></div></div>
+        </div>
       </a>
     ))}
   </div>
 </Layout>
+
+<script>
+  import { paintRoadmapCards } from '../scripts/progress.js';
+  paintRoadmapCards();
+  document.addEventListener('ai-nav:progresschange', paintRoadmapCards);
+</script>

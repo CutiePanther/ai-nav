@@ -18,6 +18,16 @@ export function isFavorite(key) {
   return loadFavorites().some((f) => f.key === key);
 }
 
+/** 整体替换（用于导入备份） */
+export function replaceFavorites(list) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(Array.isArray(list) ? list : []));
+    document.dispatchEvent(new CustomEvent('ai-nav:favchange', { detail: { imported: true } }));
+  } catch {
+    /* 存储被禁用时静默 */
+  }
+}
+
 /** 切换收藏，返回是否新增（true=已加入，false=已移除） */
 export function toggleFavorite(meta) {
   const list = loadFavorites();

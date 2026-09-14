@@ -81,3 +81,8 @@ const formattedDate = date.toLocaleDateString('zh-CN', {
     />
   </article>
 </Layout>
+
+<script define:vars={{ title, url: `/info/${entry.id}/` }}>
+  import { recordRecent } from '../../scripts/recent.js';
+  recordRecent({ title, url, type: 'info' });
+</script>

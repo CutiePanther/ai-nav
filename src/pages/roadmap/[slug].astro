@@ -166,7 +166,9 @@ const kindLabel: Record<string, string> = {
   </div>
 </Layout>
 
-<script>
+<script define:vars={{ title: roadmap.data.title, url: `/roadmap/${roadmap.id}` }}>
   import { initRoadmapDetail } from '../../scripts/progress.js';
+  import { recordRecent } from '../../scripts/recent.js';
   initRoadmapDetail(roadmap.id, roadmap.data.stages.length);
+  recordRecent({ title, url, type: 'roadmap' });
 </script>

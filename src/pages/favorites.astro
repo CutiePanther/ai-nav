@@ -16,6 +16,14 @@ const [docs, tools, faq, roadmaps] = await Promise.all([
     <p class="mt-3 max-w-2xl text-[var(--text-2)]">
       收藏、题库掌握度与路线学习进度在这里汇总。所有进度保存在本机浏览器，换设备不会同步。
     </p>
+    <div class="mt-4 flex flex-wrap items-center gap-2 text-sm">
+      <button id="backup-export" type="button" class="btn-secondary rounded-lg">导出备份（JSON）</button>
+      <button id="backup-import-btn" type="button" class="btn-secondary rounded-lg">导入备份</button>
+      <input id="backup-import" type="file" accept=".json,application/json" class="hidden" />
+      <button id="backup-md" type="button" class="btn-secondary rounded-lg">导出收藏 Markdown</button>
+      <span id="backup-msg" class="text-xs text-[var(--text-3)]"></span>
+    </div>
+    <p class="mt-3 text-xs text-[var(--text-3)]">换设备/清缓存前建议「导出备份」；导入会覆盖当前收藏与学习进度。</p>
   </header>
 
   <!-- ===== 题库掌握度 ===== -->
@@ -131,6 +139,24 @@ const [docs, tools, faq, roadmaps] = await Promise.all([
   import { loadFavorites } from '../scripts/favorites.js';
   import '../scripts/favorites.js'; // 初始化收藏按钮
   import { getMastery, masteryCounts, paintRoadmapCards } from '../scripts/progress.js';
+  import { downloadJSON, downloadMarkdown, bindImport } from '../scripts/backup.js';
+
+  // —— 备份/导入 ——
+  document.getElementById('backup-export')?.addEventListener('click', downloadJSON);
+  document.getElementById('backup-md')?.addEventListener('click', downloadMarkdown);
+  document.getElementById('backup-import-btn')?.addEventListener('click', () => {
+    document.getElementById('backup-import')?.click();
+  });
+  bindImport(document.getElementById('backup-import'), (ok, err) => {
+    const msg = document.getElementById('backup-msg');
+    if (msg) {
+      msg.textContent = ok ? '导入成功 ✓（已刷新）' : `导入失败：${err}`;
+      msg.style.color = ok ? 'var(--success)' : 'var(--destructive)';
+    }
+    renderFav();
+    renderMastery();
+    paintRoadmapCards();
+  });
 
   // —— 收藏 ——
   const countEl = document.getElementById('fav-count');

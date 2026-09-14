@@ -1,0 +1,67 @@
+---
+// 首页「我的学习概览」：读取本机 localStorage，展示掌握/阶段/收藏统计与最近浏览。
+// 无数据时渲染引导空态；数据变化实时刷新（progresschange / favchange）。
+---
+<section class="mt-16">
+  <h2 class="section-title text-2xl">我的学习概览</h2>
+  <div id="study-dashboard" aria-live="polite"></div>
+</section>
+
+<script>
+  import { loadFavorites } from '../scripts/favorites.js';
+  import { exportAllProgress, masteryCounts } from '../scripts/progress.js';
+  import { renderRecent } from '../scripts/recent.js';
+
+  const root = document.getElementById('study-dashboard');
+
+  function render() {
+    const { mastered, review } = masteryCounts();
+    const pro = exportAllProgress();
+    let doneStages = 0;
+    for (const k of Object.keys(pro)) {
+      if (k.startsWith('rm:')) doneStages += Object.keys(pro[k] || {}).length;
+    }
+    const favCount = loadFavorites().length;
+    const has = mastered || review || doneStages || favCount;
+
+    if (!has) {
+      root.innerHTML =
+        '<div class="card mt-6 p-8 text-center text-sm text-[var(--text-2)]">' +
+        '你的学习进度会汇总在这里：<span class="font-medium text-[var(--text-1)]">已掌握题目 / 路线阶段 / 收藏</span>。' +
+        '去 <a href="/faq" class="font-medium text-[var(--accent-text)] hover:underline">刷题库</a>' +
+        '、<a href="/roadmap" class="font-medium text-[var(--accent-text)] hover:underline">跟路线</a>' +
+        ' 或 <a href="/tools" class="font-medium text-[var(--accent-text)] hover:underline">收藏工具</a> 开始吧。' +
+        '</div>';
+      return;
+    }
+
+    const stats = [
+      { n: mastered, l: '题已掌握', sub: review ? `待复习 ${review}` : '' },
+      { n: doneStages, l: '路线阶段' },
+      { n: favCount, l: '收藏' },
+    ];
+    root.innerHTML =
+      '<div class="mt-6 grid grid-cols-3 gap-3">' +
+      stats
+        .map(
+          (s) =>
+            `<div class="card px-4 py-4 text-center">` +
+            `<p class="text-2xl font-bold tabular-nums text-[var(--text-1)]">${s.n}</p>` +
+            `<p class="mt-0.5 text-xs tracking-wide text-[var(--text-3)]">${s.l}${s.sub ? ` · ${s.sub}` : ''}</p>` +
+            `</div>`
+        )
+        .join('') +
+      '</div>' +
+      '<div class="mt-4 flex items-center justify-between gap-3">' +
+      '<h3 class="text-sm font-semibold text-[var(--text-1)]">最近浏览</h3>' +
+      '<a href="/favorites" class="shrink-0 text-xs font-medium text-[var(--accent-text)] hover:underline">学习中心 →</a>' +
+      '</div>' +
+      '<div id="study-recent" class="mt-3 grid gap-2 sm:grid-cols-2"></div>';
+
+    renderRecent(document.getElementById('study-recent'));
+  }
+
+  render();
+  document.addEventListener('ai-nav:progresschange', render);
+  document.addEventListener('ai-nav:favchange', render);
+</script>

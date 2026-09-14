@@ -108,6 +108,11 @@ const diffColor: Record<string, string> = {
   </article>
 </Layout>
 
+<script define:vars={{ title, url: `/faq/${entry.id}/` }}>
+  import { recordRecent } from '../../scripts/recent.js';
+  recordRecent({ title, url, type: 'faq' });
+</script>
+
 <script>
   import { initMasteryButtons } from '../../scripts/progress.js';
   initMasteryButtons();

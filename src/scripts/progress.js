@@ -22,6 +22,17 @@ function save(p) {
   }
 }
 
+/** 导出完整进度（备份用） */
+export function exportAllProgress() {
+  return load();
+}
+
+/** 整体替换（导入备份用），默认全量覆盖，可传置空对象清空 */
+export function replaceProgress(p) {
+  save(typeof p === 'object' && p ? p : {});
+  notify();
+}
+
 /** 通知各页面刷新进度展示 */
 function notify() {
   document.dispatchEvent(new CustomEvent('ai-nav:progresschange'));

@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import StudyOverview from '../components/StudyOverview.astro';
 import { getCollection } from 'astro:content';
 
 const docs = await getCollection('docs');
@@ -63,6 +64,9 @@ const AI_VISIBLE = import.meta.env.DEV || import.meta.env.PUBLIC_AI_ENABLED === 
       ))}
     </div>
   </section>
+
+  <!-- ============ 我的学习概览 ============ -->
+  <StudyOverview />
 
   <!-- ============ 如何使用本站 ============ -->
   <section class="mt-16">

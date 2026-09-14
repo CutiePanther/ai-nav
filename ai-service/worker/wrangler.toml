@@ -16,3 +16,5 @@ ALLOWED_ORIGIN = "https://ai-nav-flax.vercel.app"
 #   OPENAI_API_KEY, OPENAI_BASE_URL, MODEL, EMBEDDING_MODEL
 # 可选：EMBEDDING_BASE_URL / EMBEDDING_API_KEY / EMBEDDING_QUERY_PREFIX
 #       未设 EMBEDDING_* 时自动回退 OPENAI_*
+# 可选调参：TOP_K（检索条数，默认 5）、CONTEXT_CHUNK_LEN（每来源上下文截取字符，默认 900）、
+#       MAX_TURNS（携带的多轮历史轮数，默认 6）、RATE_LIMIT_PER_MIN（每 IP 每分钟限次，默认 10）

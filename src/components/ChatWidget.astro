@@ -114,6 +114,8 @@ const roadmapCount = (await getCollection('roadmaps')).length;
 
   let busy = false;
   let currentStream = null;
+  // 多轮会话上下文：user + ai 交替，随请求发给服务端，新对话时清空
+  let history = [];
 
   // 前端变量不注入 <script>，须经 data-* 属性读取
   const FAQ_COUNT = root.dataset.faqCount || '';
@@ -263,6 +265,7 @@ const roadmapCount = (await getCollection('roadmaps')).length;
     inputEl.style.height = 'auto';
     setBusy(true);
 
+    history.push({ role: 'user', content: question });
     addMessage('user', question);
     const { wrap, bubble } = addMessage('ai', '<span class="chat-typing"><span></span><span></span><span></span></span>');
 
@@ -274,9 +277,15 @@ const roadmapCount = (await getCollection('roadmaps')).length;
       const res = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question, history: history.slice(-12) }),
       });
-      if (!res.ok || !res.body) throw new Error(`服务返回 ${res.status}`);
+      if (!res.ok || !res.body) {
+        // 读取服务端 JSON 错误体（如 400/429），取更可读的提示
+        let detail = '';
+        try { detail = (await res.json()).error || ''; } catch {}
+        const msg = detail ? `${res.status}: ${detail}` : `服务返回 ${res.status}`;
+        throw new Error(msg);
+      }
 
       currentStream = res.body.getReader();
       const decoder = new TextDecoder();
@@ -314,6 +323,9 @@ const roadmapCount = (await getCollection('roadmaps')).length;
           }
         }
       }
+
+      // 流结束：记录 assistant 上下文（仅成功时，异常会 throw 跳出不入库）
+      if (answer) history.push({ role: 'assistant', content: answer });
 
       // 流结束：渲染完整 Markdown
       let html = '';
@@ -359,6 +371,7 @@ const roadmapCount = (await getCollection('roadmaps')).length;
     }
     setBusy(false);
     currentStream = null;
+    history = [];
     inputEl.value = '';
     renderEmpty();
     inputEl.focus();

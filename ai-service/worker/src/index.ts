@@ -14,7 +14,21 @@ export interface Env extends KVEnv {
   EMBEDDING_QUERY_PREFIX?: string;
   ALLOWED_ORIGIN?: string;
   RATE_LIMIT_PER_MIN?: string;
+  /** 检索 topK（默认 5）；上下文每来源截取字符数（默认 900）；携带的历史会话轮数上限（默认 6） */
+  TOP_K?: string;
+  CONTEXT_CHUNK_LEN?: string;
+  MAX_TURNS?: string;
 }
+
+// 结构化观测日志：输出为单行 JSON，便于 Cloudflare 后台按字段筛选/排查
+function log(event: string, fields: Record<string, unknown> = {}) {
+  try {
+    // eslint-disable-next-line no-console
+    console.log(JSON.stringify({ ts: Date.now(), ev: event, ...fields }));
+  } catch { /* 日志失败不影响业务 */ }
+}
+
+interface ChatMsg { role: 'user' | 'assistant'; content: string }
 
 function embedEnv(env: Env): EmbedEnv | null {
   const base = env.EMBEDDING_BASE_URL || env.OPENAI_BASE_URL || '';
@@ -64,10 +78,10 @@ const BASE_RULES = [
   '5. 用户问题若与 AI 学习无关，礼貌拒绝并引导回站内栏目。',
 ].join('\n');
 
-function buildContextFromHits(hits: Hit[]): string {
+function buildContextFromHits(hits: Hit[], chunkLen = 900): string {
   if (hits.length === 0) return '';
   return hits
-    .map((h, i) => `[${i + 1}] 标题：${h.chunk.title} 分类：${h.chunk.category}\n正文：${h.chunk.text.slice(0, 900)}`)
+    .map((h, i) => `[${i + 1}] 标题：${h.chunk.title} 分类：${h.chunk.category}\n正文：${h.chunk.text.slice(0, chunkLen)}`)
     .join('\n\n');
 }
 
@@ -76,14 +90,19 @@ function sse(event: string, data: string): string {
 }
 
 async function handleChat(req: Request, env: Env): Promise<Response> {
+  const started = Date.now();
+  const ip = req.headers.get('CF-Connecting-IP') || 'unknown';
+
   if (rateLimited(req, env)) {
+    log('rate_limited', { ip });
     return new Response(JSON.stringify({ error: '请求过于频繁，请稍后再试' }), {
       status: 429,
       headers: { 'Content-Type': 'application/json', ...corsHeaders(req, env) },
     });
   }
 
-  const question = String((await req.json().catch(() => ({})) as { question?: unknown }).question ?? '').trim();
+  const body = (await req.json().catch(() => ({}))) as { question?: unknown; history?: unknown };
+  const question = String(body.question ?? '').trim();
   if (!question) {
     return new Response(JSON.stringify({ error: 'question is required' }), {
       status: 400,
@@ -97,13 +116,31 @@ async function handleChat(req: Request, env: Env): Promise<Response> {
     });
   }
 
+  // 多轮历史：仅接受 user/assistant，角色与长度双重校验，取最近 N 轮
+  const maxTurns = Number(env.MAX_TURNS || 6);
+  const rawHistory = Array.isArray(body.history) ? body.history : [];
+  const history: ChatMsg[] = [];
+  for (const m of rawHistory) {
+    if (history.length >= maxTurns * 2) break;
+    if (typeof m !== 'object' || m === null) continue;
+    const role = (m as ChatMsg).role;
+    const content = String((m as ChatMsg).content ?? '').trim();
+    if ((role === 'user' || role === 'assistant') && content) {
+      history.push({ role, content: content.slice(0, 2000) });
+    }
+  }
+
+  const topK = Number(env.TOP_K || 5);
+  const chunkLen = Number(env.CONTEXT_CHUNK_LEN || 900);
+
   const hdrs = { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive', ...corsHeaders(req, env) };
 
   // 未配置 LLM → 回显骨架（检索命中情况），不清空索引能力
   const apiKey = env.OPENAI_API_KEY;
   const baseURL = env.OPENAI_BASE_URL;
   if (!apiKey || !baseURL) {
-    const hits = await retrieveHybrid(env, embedEnv(env), question, 5);
+    const hits = await retrieveHybrid(env, embedEnv(env), question, topK);
+    log('chat_skeleton', { ip, qlen: question.length, hits: hits.length, ms: Date.now() - started });
     const text = hits.length
       ? `骨架已就绪（未配置 LLM）。检索命中 ${hits.length} 条：${hits.map((h) => h.chunk.title).join('；')}。在 Worker 配置 OPENAI_API_KEY / OPENAI_BASE_URL 后将返回完整回答。`
       : 'AI 服务骨架已就绪。配置 OPENAI_API_KEY 与 OPENAI_BASE_URL 后将接入真实 RAG 生成。';
@@ -118,20 +155,23 @@ async function handleChat(req: Request, env: Env): Promise<Response> {
     return new Response(stream, { headers: hdrs });
   }
 
-  const hits = await retrieveHybrid(env, embedEnv(env), question, 5);
-  const context = buildContextFromHits(hits);
+  const hits = await retrieveHybrid(env, embedEnv(env), question, topK);
+  const context = buildContextFromHits(hits, chunkLen);
   const system = context ? `${BASE_RULES}\n\n<context>\n${context}\n</context>` : BASE_RULES;
   const sources = hits.map((h) => ({ title: h.chunk.title, category: h.chunk.category, url: h.chunk.url }));
+
+  const messages: ChatMsg[] = [
+    { role: 'system', content: system },
+    ...history,
+    { role: 'user', content: question },
+  ];
 
   const upstreamRes = await fetch(`${baseURL}/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model: env.MODEL || 'deepseek-chat',
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: question },
-      ],
+      messages,
       stream: true,
       max_tokens: 800,
       temperature: 0.3,
@@ -140,6 +180,7 @@ async function handleChat(req: Request, env: Env): Promise<Response> {
 
   if (upstreamRes instanceof Error || !upstreamRes.ok || !upstreamRes.body) {
     const status = upstreamRes instanceof Error ? 502 : upstreamRes.status;
+    log('chat_upstream_error', { ip, status, ms: Date.now() - started, qlen: question.length });
     const text = new TextEncoder();
     const stream = new ReadableStream({
       start(controller) {
@@ -149,6 +190,8 @@ async function handleChat(req: Request, env: Env): Promise<Response> {
     });
     return new Response(stream, { headers: hdrs, status: 200 });
   }
+
+  log('chat_start', { ip, qlen: question.length, hits: hits.length, turns: history.length, topK, ms: Date.now() - started });
 
   // 透传上游 SSE 并转为 chat 前端协议事件（sources → delta → done）
   const enc = new TextEncoder();
@@ -189,6 +232,7 @@ async function handleChat(req: Request, env: Env): Promise<Response> {
       } catch (err) {
         controller.enqueue(enc.encode(sse('error', err instanceof Error ? err.message : String(err))));
       } finally {
+        log('chat_done', { ip, ms: Date.now() - started });
         try { reader.releaseLock(); } catch { /* ignore */ }
         controller.close();
       }
@@ -200,10 +244,13 @@ async function handleChat(req: Request, env: Env): Promise<Response> {
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
+    const started = Date.now();
+    const ip = req.headers.get('CF-Connecting-IP') || 'unknown';
+    const url = new URL(req.url);
     const cors = corsHeaders(req, env);
+
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
 
-    const url = new URL(req.url);
     if (req.method === 'GET' && url.pathname.endsWith('/health')) {
       return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json', ...cors } });
     }
@@ -212,6 +259,7 @@ export default {
       return handleChat(req, env);
     }
 
+    log('request', { ip, method: req.method, path: url.pathname, status: 404, ms: Date.now() - started });
     return new Response('Not found', { status: 404, headers: cors });
   },
 };

@@ -1,16 +1,16 @@
-name = "ai-dev-nav-ai"
+﻿name = "ai-dev-nav-ai"
 main = "src/index.ts"
 compatibility_date = "2025-05-01"
-account_id = "your_account_id"
+account_id = "bc90af7590b6d2ba9f2286e85ceae209"
 
 # AI 索引（index.json / vectors.json）存于 KV；替换为你创建出的命名空间 ID。
 [[kv_namespaces]]
 binding = "AI_DOCS"
-id = "your_namespace_id"
+id = "ad191bb336314f439eb3b71a5a92edde"
 
 # LLM 网关（OpenAI 兼容）
 [vars]
-ALLOWED_ORIGIN = "https://your-site.vercel.app"
+ALLOWED_ORIGIN = "https://ai-nav-flax.vercel.app"
 
 # 机密走环境变量（wrangler secret put），勿写进本文件：
 #   OPENAI_API_KEY, OPENAI_BASE_URL, MODEL, EMBEDDING_MODEL

@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "upload:kv": "node scripts/upload-kv.mjs && wrangler kv:bulk put --binding=AI_DOCS --namespace-id=$(node -p \"require('./wrangler.toml').kv_namespaces[0].id\") data/bulk.json"
+    "upload:kv": "node scripts/upload-kv.mjs && wrangler kv bulk put data/bulk.json --namespace-id=ad191bb336314f439eb3b71a5a92edde --remote"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250301.0",
+    "@cloudflare/workers-types": "^5.20260911.1",
     "wrangler": "^4.10.0"
   }
 }

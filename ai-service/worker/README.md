@@ -12,8 +12,8 @@
 npx wrangler kv namespace create AI_DOCS
 # 把返回的 id 填进 wrangler.toml 的 [[kv_namespaces]] 的 id
 
-node scripts/upload-kv.mjs                 # 生成 data/bulk.json
-npx wrangler kv:bulk put --binding=AI_DOCS --namespace-id=<你的id> data/bulk.json
+node scripts/upload-kv.mjs                     # 生成 data/bulk.json（数组格式）
+npx wrangler kv bulk put data/bulk.json --namespace-id=ad191bb336314f439eb3b71a5a92edde --remote
 ```
 
 ## 2. 配置机密（LLM 网关，写进 env 不入仓库）

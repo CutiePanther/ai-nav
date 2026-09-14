@@ -1,0 +1,19 @@
+{
+  "name": "AI 开发学习导航",
+  "short_name": "AI 导航",
+  "description": "AI 开发者的一站式学习导航站：聚合文档、工具、资讯、题库与学习路线",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "/icons/icon-512.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

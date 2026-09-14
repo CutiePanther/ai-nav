@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import RelatedList from '../../components/RelatedList.astro';
 import { getCollection } from 'astro:content';
 
 export async function getStaticPaths() {
@@ -11,6 +12,7 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
+const allInfo = await getCollection('info');
 const { title, source, url, summary, category, date, tags, body } = entry.data;
 
 const formattedDate = date.toLocaleDateString('zh-CN', {
@@ -64,5 +66,18 @@ const formattedDate = date.toLocaleDateString('zh-CN', {
         {tags.map((t) => <span class="rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-xs text-[var(--text-2)]">#{t}</span>)}
       </div>
     )}
+
+    <RelatedList
+      title="相关资讯"
+      items={allInfo.map((i) => ({
+        id: i.id,
+        title: i.data.title,
+        link: `/info/${i.id}/`,
+        category: i.data.category,
+        tags: i.data.tags,
+        meta: `${i.data.source} · ${i.data.date.toLocaleDateString('zh-CN')}`,
+      }))}
+      current={{ id: entry.id, category, tags }}
+    />
   </article>
 </Layout>

@@ -38,6 +38,8 @@ const path = Astro.url.pathname;
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/icon-512.jpg" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <meta name="color-scheme" content="light dark" />
@@ -92,6 +94,15 @@ const path = Astro.url.pathname;
         if (tc) tc.setAttribute("content", theme === "dark" ? "#000000" : "#ffffff");
         window.__theme = theme;
       })();
+    </script>
+
+    <script>
+      // PWA：生产环境注册离线 Service Worker（本地开发跳过，避免干扰 HMR）
+      if ('serviceWorker' in navigator && import.meta.env.PROD) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
     </script>
   </head>
   <body class="relative flex min-h-screen flex-col">

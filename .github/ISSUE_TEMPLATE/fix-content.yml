@@ -1,0 +1,51 @@
+name: 🐛 内容纠错 / 失效反馈
+description: 报告链接失效、信息过时或内容错误
+title: "[纠错] "
+labels: ["纠错"]
+assignees: []
+body:
+  - type: dropdown
+    id: location
+    attributes:
+      label: 问题位置
+      description: 这条内容出现在哪个栏目？
+      options:
+        - 文档库
+        - 工具
+        - 题库
+        - 资讯
+        - 路线图
+        - 首页 / 其它
+    validations:
+      required: true
+  - type: input
+    id: name
+    attributes:
+      label: 条目名称
+      placeholder: 出问题的条目叫什么？
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 问题类型
+      options:
+        - 链接失效 / 打开报错
+        - 信息过时 / 收费策略有变
+        - 描述或分类有误
+        - 有更好的替代
+        - 其它
+    validations:
+      required: true
+  - type: textarea
+    id: detail
+    attributes:
+      label: 详细描述
+      description: 越具体越好；如是链接失效，请附上网址与报错现象
+    validations:
+      required: true
+  - type: textarea
+    id: suggest
+    attributes:
+      label: 建议 / 期望（可选）
+      description: 你希望改成什么？

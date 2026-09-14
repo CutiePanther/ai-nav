@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "astro dev",
     "fetch-rss": "node scripts/fetch-rss.mjs",
+    "check:links": "node scripts/check-links.mjs",
     "prebuild": "node scripts/fetch-rss.mjs",
     "build": "astro build",
     "index": "pagefind --site dist",

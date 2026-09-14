@@ -1,0 +1,52 @@
+name: 📚 文档投稿
+description: 推荐一个值得收录的官方文档 / 资源
+title: "[文档投稿] "
+labels: ["投稿", "文档"]
+assignees: []
+body:
+  - type: input
+    id: name
+    attributes:
+      label: 文档名称
+      placeholder: 例如 AgentScope 官方文档
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: 官方地址
+      placeholder: https://...
+    validations:
+      required: true
+  - type: input
+    id: category
+    attributes:
+      label: 分类
+      description: Prompt / API / 框架 / 推理与部署 / 向量库 / 应用层 / 其他
+      placeholder: 例：框架
+  - type: dropdown
+    id: zh
+    attributes:
+      label: 中文友好度
+      options:
+        - 中文
+        - 中英
+        - 英文
+        - 不确定
+  - type: input
+    id: popularity
+    attributes:
+      label: 常用度（1-5）
+      description: 可选，默认 3
+      placeholder: "3"
+  - type: textarea
+    id: desc
+    attributes:
+      label: 一句话简介
+    validations:
+      required: true
+  - type: input
+    id: tags
+    attributes:
+      label: 标签（可选）
+      description: 逗号分隔

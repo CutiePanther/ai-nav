@@ -1,0 +1,110 @@
+---
+import Layout from '../layouts/Layout.astro';
+import FavoriteButton from '../components/FavoriteButton.astro';
+import { getCollection } from 'astro:content';
+
+const [docs, tools, faq] = await Promise.all([
+  getCollection('docs'),
+  getCollection('tools'),
+  getCollection('faq'),
+]);
+---
+<Layout title="我的收藏" description="在文档、工具、题库页面点 ☆ 收藏的内容，汇总保存在本机浏览器。">
+  <header class="mb-6">
+    <h1 class="text-3xl font-bold sm:text-4xl">我的收藏</h1>
+    <p class="mt-3 max-w-2xl text-[var(--text-2)]">
+      在「文档 / 工具 / 题库」页面点 ☆ 收藏，这里统一汇总。收藏保存在本机浏览器，换设备不会同步。
+    </p>
+  </header>
+
+  <p id="fav-count" class="mb-4 text-sm text-[var(--text-2)]"></p>
+
+  <div id="fav-empty" class="card hidden p-12 text-center">
+    <p class="text-[var(--text-2)]">还没有收藏内容。</p>
+    <div class="mt-4 flex items-center justify-center gap-4 text-sm">
+      <a href="/docs" class="font-medium text-[var(--accent-text)] hover:underline">逛文档 →</a>
+      <a href="/tools" class="font-medium text-[var(--accent-text)] hover:underline">逛工具 →</a>
+      <a href="/faq" class="font-medium text-[var(--accent-text)] hover:underline">逛题库 →</a>
+    </div>
+  </div>
+
+  <div id="fav-groups" class="space-y-10">
+    <section data-fav-group="doc">
+      <h2 class="mb-3 text-xl font-bold text-[var(--text-1)]">文档</h2>
+      <div class="grid gap-3 sm:grid-cols-2">
+        {docs.map((d) => (
+          <div data-fav-item={`doc|${d.id}`} class="fav-row card flex items-center justify-between gap-3 p-4">
+            <a href={d.data.url} target="_blank" rel="noopener" class="min-w-0">
+              <p class="truncate font-semibold text-[var(--text-1)] transition hover:text-[var(--accent-text)]">{d.data.title}</p>
+              <p class="truncate text-xs text-[var(--text-3)]">{d.data.description}</p>
+            </a>
+            <FavoriteButton key={`doc|${d.id}`} title={d.data.title} url={d.data.url} type="doc" class="!h-7 !w-7" />
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section data-fav-group="tool">
+      <h2 class="mb-3 text-xl font-bold text-[var(--text-1)]">工具</h2>
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {tools.map((t) => (
+          <div data-fav-item={`tool|${t.id}`} class="fav-row card flex items-center justify-between gap-3 p-4">
+            <a href={t.data.url} target="_blank" rel="noopener" class="min-w-0">
+              <p class="truncate font-semibold text-[var(--text-1)] transition hover:text-[var(--accent-text)]">{t.data.title}</p>
+              <p class="truncate text-xs text-[var(--text-3)]">{t.data.category} · {t.data.description}</p>
+            </a>
+            <FavoriteButton key={`tool|${t.id}`} title={t.data.title} url={t.data.url} type="tool" class="!h-7 !w-7" />
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section data-fav-group="faq">
+      <h2 class="mb-3 text-xl font-bold text-[var(--text-1)]">题库</h2>
+      <div class="grid gap-3 sm:grid-cols-2">
+        {faq.map((q) => (
+          <div data-fav-item={`faq|${q.id}`} class="fav-row card flex items-center justify-between gap-3 p-4">
+            <a href={`/faq/${q.id}/`} class="min-w-0">
+              <p class="truncate font-semibold text-[var(--text-1)] transition hover:text-[var(--accent-text)]">{q.data.title}</p>
+              <p class="truncate text-xs text-[var(--text-3)]">{q.data.category} · {q.data.difficulty}</p>
+            </a>
+            <FavoriteButton key={`faq|${q.id}`} title={q.data.title} url={`/faq/${q.id}/`} type="faq" class="!h-7 !w-7" />
+          </div>
+        ))}
+      </div>
+    </section>
+  </div>
+</Layout>
+
+<script>
+  import { loadFavorites } from '../scripts/favorites.js';
+  import '../scripts/favorites.js'; // 初始化收藏按钮
+
+  const countEl = document.getElementById('fav-count');
+  const emptyEl = document.getElementById('fav-empty');
+  const sections = Array.from(document.querySelectorAll('[data-fav-group]'));
+
+  function render() {
+    const keys = new Set(loadFavorites().map((f) => f.key));
+    let shown = 0;
+    document.querySelectorAll('[data-fav-item]').forEach((el) => {
+      const show = keys.has(el.dataset.favItem);
+      el.style.display = show ? '' : 'none';
+      if (show) shown++;
+    });
+    sections.forEach((sec) => {
+      const any = Array.from(sec.querySelectorAll('[data-fav-item]')).some((el) => el.style.display !== 'none');
+      sec.style.display = any ? '' : 'none';
+    });
+    if (shown === 0) {
+      emptyEl.classList.remove('hidden');
+      countEl.textContent = '';
+    } else {
+      emptyEl.classList.add('hidden');
+      countEl.textContent = `共 ${shown} 项收藏`;
+    }
+  }
+
+  render();
+  document.addEventListener('ai-nav:favchange', render);
+</script>

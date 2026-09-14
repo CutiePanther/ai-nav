@@ -1,0 +1,54 @@
+name: 🛠 工具投稿
+description: 推荐一个值得收录的 AI 工具
+title: "[工具投稿] "
+labels: ["投稿", "工具"]
+assignees: []
+body:
+  - type: input
+    id: name
+    attributes:
+      label: 工具名称
+      placeholder: 例如 OpenAI Codex
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: 官网 / 访问地址
+      placeholder: https://...
+    validations:
+      required: true
+  - type: input
+    id: category
+    attributes:
+      label: 分类
+      description: AI编程 / AI写作 / AI图像 / AI视频 / AI开发平台 / AI智能体 / 其他
+      placeholder: 例：AI编程
+  - type: dropdown
+    id: free
+    attributes:
+      label: 收费模式
+      options:
+        - 免费
+        - 免费增值
+        - 付费
+        - 不确定
+    validations:
+      required: true
+  - type: textarea
+    id: desc
+    attributes:
+      label: 一句话简介
+      description: 用一句话说明它解决什么问题、适合谁
+    validations:
+      required: true
+  - type: input
+    id: tags
+    attributes:
+      label: 标签（可选）
+      description: 逗号分隔，例：代码补全, 智能体
+  - type: textarea
+    id: note
+    attributes:
+      label: 补充说明（可选）
+      description: 为什么值得收录、特色功能等

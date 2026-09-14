@@ -12,6 +12,7 @@ const docs = defineCollection({
     category: z.string(),             // 分类：API / 框架 / 推理部署 / 向量库 / 应用层
     zhLevel: z.enum(['中文', '英文', '中英']), // 中文友好度
     popularity: z.number().min(1).max(5),     // 常用度 1-5
+    updated: z.coerce.date().optional(),      // 最近更新日期（近 90 天在列表打「更新」角标）
     tags: z.array(z.string()).default([]),
   }),
 });
@@ -43,6 +44,7 @@ const tools = defineCollection({
       'AI聊天', 'AI音频', 'AI大模型', 'AI学习平台', 'AI搜索引擎', 'AI编程',
     ]),
     free: z.enum(['免费', '付费', '免费增值']).default('免费'),
+    updated: z.coerce.date().optional(),      // 最近更新日期（近 90 天在列表打「更新」角标）
     tags: z.array(z.string()).default([]),
   }),
 });

@@ -5,5 +5,6 @@ url: https://github.com/agentscope-ai/agentscope
 category: 框架
 zhLevel: 中英
 popularity: 3
+updated: 2026-09-09
 tags: ["多智能体", "Agent框架", "分布式"]
 ---

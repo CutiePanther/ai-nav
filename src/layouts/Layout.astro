@@ -12,6 +12,9 @@ interface Props {
 
 const { title, description, floatingAI = true } = Astro.props;
 const siteName = 'AI 开发学习导航';
+const canonical = new URL(Astro.url.pathname, Astro.site);
+// 社交分享图：默认用首页「三步走」信息图
+const ogImage = new URL('/infographics/home-guide.png', Astro.site);
 
 // 悬浮 AI 助手仅本地/内网可用：DEV 始终显示；生产需显式设 PUBLIC_AI_ENABLED=true（如内网部署）。
 // 公开平台（如 Vercel）不设该变量，则自动隐藏悬浮球，避免访客请求自己机器的 localhost 而报错。
@@ -23,6 +26,7 @@ const navLinks = [
   { href: '/info', label: '资讯' },
   { href: '/faq', label: '题库' },
   { href: '/roadmap', label: '路线图' },
+  { href: '/favorites', label: '收藏' },
 ];
 
 const path = Astro.url.pathname;
@@ -40,10 +44,33 @@ const path = Astro.url.pathname;
     <meta name="theme-color" content="#000000" />
     <title>{title} · {siteName}</title>
     {description && <meta name="description" content={description} />}
-    <meta property="og:title" content={`${title} · ${siteName}`} />
-    {description && <meta property="og:description" content={description} />}
+    <link rel="canonical" href={canonical} />
+    <!-- 社交分享 / OpenGraph / Twitter -->
     <meta property="og:type" content="website" />
-    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:title" content={`${title} · ${siteName}`} />
+    <meta property="og:url" content={canonical} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={`${title} · ${siteName}`} />
+    {description && <meta name="twitter:description" content={description} />}
+    <meta name="twitter:image" content={ogImage} />
+    <!-- 站点级结构化数据：WebSite + 站内搜索 -->
+    <script is:inline type="application/ld+json">
+      {{
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: siteName,
+        description,
+        url: new URL('/', Astro.site),
+        searchAction: {
+          '@type': 'SearchAction',
+          target: `${new URL('/ai', Astro.site)}?q={search_term_string}`,
+          'query-input': 'required name=search_term_string',
+        },
+      }}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -160,6 +187,14 @@ const path = Astro.url.pathname;
                   <li>聚合外链 + 精选内容</li>
                   <li>资讯构建期自动抓取</li>
                   <li>Git 版本化维护</li>
+                  <li>
+                    <a
+                      href="https://github.com/CutiePanther/ai-nav/issues/new/choose"
+                      target="_blank"
+                      rel="noopener"
+                      class="font-medium text-[var(--accent-text)] transition hover:underline"
+                    >提交 / 纠错</a>
+                  </li>
                 </ul>
               </div>
               <div>

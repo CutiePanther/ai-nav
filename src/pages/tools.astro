@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Icon from '../components/Icon.astro';
+import FavoriteButton from '../components/FavoriteButton.astro';
 import { getCollection } from 'astro:content';
 
 const tools = await getCollection('tools');
@@ -29,9 +30,31 @@ const freeColor: Record<string, string> = {
 
 const ACTIVE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--accent)] px-3.5 py-1.5 text-sm font-medium text-white transition';
 const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--surface)] px-3.5 py-1.5 text-sm text-[var(--text-2)] ring-1 ring-[var(--border)] transition hover:text-[var(--accent-text)] hover:ring-[var(--border-strong)]';
----
 
+// 近 90 天更新则显示「更新」角标
+const FRESH_MS = 90 * 24 * 3600e3;
+const isFresh = (d?: Date) => !!d && Date.now() - new Date(d).getTime() <= FRESH_MS;
+
+// 结构化数据：工具列表 ItemList（引擎收录用，样例前 30 条控制体积）
+const itemList = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'AI 工具大全',
+  itemListElement: tools.slice(0, 30).map((t, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: t.data.title,
+    description: t.data.description,
+    url: t.data.url,
+  })),
+};
+
+// 投稿 / 纠错：一键跳到本站 GitHub Issues（预填条目名）
+const ISSUE_BASE = 'https://github.com/CutiePanther/ai-nav/issues/new';
+const issueUrl = (name: string) => `${ISSUE_BASE}?title=${encodeURIComponent(`数据纠错：${name}`)}`;
+---
 <Layout title="AI 工具大全" description="按分类导航 AI 写作、图像、视频、编程、开发平台、智能体等常用 AI 工具">
+  <script is:inline type="application/ld+json">{itemList}</script>
   <header class="mb-6">
     <h1 class="text-3xl font-bold sm:text-4xl">AI 工具大全</h1>
     <p class="mt-3 max-w-2xl text-[var(--text-2)]">
@@ -77,10 +100,7 @@ const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rou
   <!-- 工具网格 -->
   <div id="tool-grid" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
     {tools.map((t) => (
-      <a
-        href={t.data.url}
-        target="_blank"
-        rel="noopener"
+      <div
         data-category={t.data.category}
         data-free={t.data.free}
         data-title={t.data.title}
@@ -88,19 +108,31 @@ const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rou
         class="tool-card card card-lift group flex flex-col p-5"
       >
         <div class="flex items-start justify-between gap-2">
-          <h2 class="font-semibold leading-snug text-[var(--text-1)] transition group-hover:text-[var(--accent-text)]">{t.data.title}</h2>
+          <a href={t.data.url} target="_blank" rel="noopener" class="flex min-w-0 items-center gap-1.5 font-semibold leading-snug text-[var(--text-1)] transition group-hover:text-[var(--accent-text)]">
+            <span class="truncate">{t.data.title}</span>
+            {isFresh(t.data.updated) && (
+              <span class="shrink-0 rounded-full bg-[var(--accent)]/12 px-1.5 py-0.5 text-[10px] font-medium text-[var(--accent-text)]">更新</span>
+            )}
+          </a>
           <span class={`shrink-0 text-xs font-medium ${freeColor[t.data.free] ?? 'text-[var(--text-3)]'}`}>
             {t.data.free}
           </span>
         </div>
         <p class="mt-2 flex-1 text-sm leading-relaxed text-[var(--text-2)]">{t.data.description}</p>
-        <div class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-3)]">
-          <span class="badge"><Icon name={catMeta[t.data.category]?.icon} size={12} />{t.data.category}</span>
-          {t.data.tags.slice(0, 3).map((tag) => (
-            <span class="rounded bg-[var(--surface-2)] px-1.5 py-0.5">{tag}</span>
-          ))}
+        <div class="mt-3 flex items-center justify-between gap-2 text-xs text-[var(--text-3)]">
+          <span class="flex min-w-0 flex-wrap items-center gap-1.5">
+            <span class="badge shrink-0"><Icon name={catMeta[t.data.category]?.icon} size={12} />{t.data.category}</span>
+            {t.data.tags.slice(0, 3).map((tag) => (
+              <span class="rounded bg-[var(--surface-2)] px-1.5 py-0.5">{tag}</span>
+            ))}
+          </span>
+          <span class="flex shrink-0 items-center gap-2">
+            <FavoriteButton key={`tool|${t.id}`} title={t.data.title} url={t.data.url} type="tool" />
+            <a href={t.data.url} target="_blank" rel="noopener" class="font-medium text-[var(--accent-text)] hover:underline">访问 ↗</a>
+            <a href={issueUrl(t.data.title)} target="_blank" rel="noopener" title="纠错 / 反馈" class="transition hover:text-[var(--text-1)] hover:underline">纠错</a>
+          </span>
         </div>
-      </a>
+      </div>
     ))}
   </div>
 
@@ -157,4 +189,9 @@ const IDLE = 'filter-chip inline-flex items-center gap-1.5 whitespace-nowrap rou
 
   searchInput.addEventListener('input', apply);
   sortSelect.addEventListener('change', apply);
+</script>
+
+<script>
+  // 收藏功能（本地存储），依赖 src/scripts/favorites.js 的初始化
+  import '../scripts/favorites.js';
 </script>

@@ -89,6 +89,19 @@ function sse(event: string, data: string): string {
   return `event:${event}\ndata:${data}\n\n`;
 }
 
+// 从 chunk 正文生成一句话简介（去掉 markdown/代码，截取前 110 字），供来源卡片预览
+function makeExcerpt(text: string, max = 110): string {
+  const clean = text
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`([^`]*)`/g, '$1')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/[#>*_|~\-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!clean) return '';
+  return clean.length > max ? clean.slice(0, max).trimEnd() + '…' : clean;
+}
+
 async function handleChat(req: Request, env: Env): Promise<Response> {
   const started = Date.now();
   const ip = req.headers.get('CF-Connecting-IP') || 'unknown';
@@ -158,7 +171,12 @@ async function handleChat(req: Request, env: Env): Promise<Response> {
   const hits = await retrieveHybrid(env, embedEnv(env), question, topK);
   const context = buildContextFromHits(hits, chunkLen);
   const system = context ? `${BASE_RULES}\n\n<context>\n${context}\n</context>` : BASE_RULES;
-  const sources = hits.map((h) => ({ title: h.chunk.title, category: h.chunk.category, url: h.chunk.url }));
+  const sources = hits.map((h) => ({
+    title: h.chunk.title,
+    category: h.chunk.category,
+    url: h.chunk.url,
+    excerpt: makeExcerpt(h.chunk.text),
+  }));
 
   const messages: ChatMsg[] = [
     { role: 'system', content: system },

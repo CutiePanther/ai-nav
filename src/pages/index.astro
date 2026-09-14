@@ -19,9 +19,12 @@ const heroStats = [
   { n: roadmaps.length, l: '路线' },
 ];
 
-// AI 问答仅本地/内网可用：本地开发(DEV)始终显示；生产构建需显式设 PUBLIC_AI_ENABLED=true（如内网部署）。
-// 公开平台（如 Vercel）不设该变量，则自动隐藏 AI 入口，避免访客请求自己机器的 localhost 而报错。
-const AI_VISIBLE = import.meta.env.DEV || import.meta.env.PUBLIC_AI_ENABLED === 'true';
+// AI 问答入口：dev 始终显示；生产配置了 AI 服务地址（PUBLIC_AI_API_BASE，如已部署的 Worker）或有
+// PUBLIC_AI_ENABLED=true 才显示。未配置则隐藏 AI 入口，避免访客请求不存在的服务而报错。
+const AI_VISIBLE =
+  import.meta.env.DEV ||
+  import.meta.env.PUBLIC_AI_ENABLED === 'true' ||
+  Boolean(import.meta.env.PUBLIC_AI_API_BASE);
 ---
 
 <Layout title="首页" description="AI 开发者的一站式学习导航站：聚合文档、工具、资讯、题库与学习路线，从入门到进阶的完整路径">

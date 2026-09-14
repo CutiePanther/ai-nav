@@ -16,9 +16,12 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 // 社交分享图：默认用首页「三步走」信息图
 const ogImage = new URL('/infographics/home-guide.png', Astro.site);
 
-// 悬浮 AI 助手仅本地/内网可用：DEV 始终显示；生产需显式设 PUBLIC_AI_ENABLED=true（如内网部署）。
-// 公开平台（如 Vercel）不设该变量，则自动隐藏悬浮球，避免访客请求自己机器的 localhost 而报错。
-const AI_VISIBLE = import.meta.env.DEV || import.meta.env.PUBLIC_AI_ENABLED === 'true';
+// 悬浮 AI 助手：dev 始终显示；生产配置了 AI 服务地址（PUBLIC_AI_API_BASE）或 PUBLIC_AI_ENABLED=true 才注入。
+// 未配置则隐藏悬浮球，避免访客请求不存在的服务而报错。
+const AI_VISIBLE =
+  import.meta.env.DEV ||
+  import.meta.env.PUBLIC_AI_ENABLED === 'true' ||
+  Boolean(import.meta.env.PUBLIC_AI_API_BASE);
 
 const navLinks = [
   { href: '/docs', label: '文档' },

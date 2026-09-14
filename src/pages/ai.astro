@@ -2,9 +2,12 @@
 import Layout from '../layouts/Layout.astro';
 import ChatWidget from '../components/ChatWidget.astro';
 
-// AI 问答仅本地/内网可用：DEV 默认显示；生产需显式设 PUBLIC_AI_ENABLED=true。
-// 公开平台（如 Vercel）不设该变量，则页面仅展示「不可用」说明，不渲染聊天面板。
-const AI_VISIBLE = import.meta.env.DEV || import.meta.env.PUBLIC_AI_ENABLED === 'true';
+// AI 问答：本地(DEV)始终显示；生产需提供 AI 服务地址 PUBLIC_AI_API_BASE（如已部署的 Worker）
+// 或显式设 PUBLIC_AI_ENABLED=true。未配置时页面展示「暂未开放」优雅降级，避免请求死地址。
+const AI_VISIBLE =
+  import.meta.env.DEV ||
+  import.meta.env.PUBLIC_AI_ENABLED === 'true' ||
+  Boolean(import.meta.env.PUBLIC_AI_API_BASE);
 ---
 
 <Layout title="AI 助手" description="基于站内题库与学习路线的 AI 学习助手，带引用回答你的 AI 开发学习问题" floatingAI={false}>

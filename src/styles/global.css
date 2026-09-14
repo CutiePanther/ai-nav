@@ -731,3 +731,19 @@ html.dark .mastery-btn.is-review {
   border: none;
   border-top: 1px solid var(--border);
 }
+
+/* ================= 无障碍：减弱动效 + 键盘焦点兜底 ================= */
+/* 用户系统开启「减弱动态效果」时，关闭平滑滚动与过渡/动画，避免诱发眩晕 */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

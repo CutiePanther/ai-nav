@@ -1,0 +1,15 @@
+{
+  "name": "ai-dev-nav-ai",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "upload:kv": "node scripts/upload-kv.mjs && wrangler kv:bulk put --binding=AI_DOCS --namespace-id=$(node -p \"require('./wrangler.toml').kv_namespaces[0].id\") data/bulk.json"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250301.0",
+    "wrangler": "^4.10.0"
+  }
+}

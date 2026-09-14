@@ -1,0 +1,18 @@
+name = "ai-dev-nav-ai"
+main = "src/index.ts"
+compatibility_date = "2025-05-01"
+account_id = "your_account_id"
+
+# AI 索引（index.json / vectors.json）存于 KV；替换为你创建出的命名空间 ID。
+[[kv_namespaces]]
+binding = "AI_DOCS"
+id = "your_namespace_id"
+
+# LLM 网关（OpenAI 兼容）
+[vars]
+ALLOWED_ORIGIN = "https://your-site.vercel.app"
+
+# 机密走环境变量（wrangler secret put），勿写进本文件：
+#   OPENAI_API_KEY, OPENAI_BASE_URL, MODEL, EMBEDDING_MODEL
+# 可选：EMBEDDING_BASE_URL / EMBEDDING_API_KEY / EMBEDDING_QUERY_PREFIX
+#       未设 EMBEDDING_* 时自动回退 OPENAI_*

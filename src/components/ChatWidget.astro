@@ -334,7 +334,7 @@ const roadmapCount = (await getCollection('roadmaps')).length;
       scrollToBottom();
     } catch (err) {
       const msg = err && err.message ? err.message : String(err);
-      bubble.innerHTML = `<div class="answer-text chat-error">⚠️ ${escapeHtml(msg)}。请确认 AI 服务已启动（<code>cd ai-service && npm run dev</code>）。</div>`;
+      bubble.innerHTML = `<div class="answer-text chat-error">⚠️ ${escapeHtml(msg)}。</div>`;
     } finally {
       setBusy(false);
       inputEl.focus();
@@ -790,5 +790,16 @@ const roadmapCount = (await getCollection('roadmaps')).length;
     }
     .chat-widget .chat-suggest-grid { gap: 6px; }
     .chat-widget .chat-suggest-card { padding: 7px 11px; }
+  }
+
+  /* 减弱动效：系统偏好时关闭打字动画与面板位移动画 */
+  @media (prefers-reduced-motion: reduce) {
+    .chat-widget .chat-typing span,
+    .chat-widget .chat-widget,
+    .chat-widget .chat-panel {
+      animation: none !important;
+      transition: none !important;
+    }
+    .chat-widget .chat-messages { scroll-behavior: auto; }
   }
 </style>

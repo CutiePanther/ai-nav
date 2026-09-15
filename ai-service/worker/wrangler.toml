@@ -11,6 +11,16 @@ id = "ad191bb336314f439eb3b71a5a92edde"
 # LLM 网关（OpenAI 兼容）
 [vars]
 ALLOWED_ORIGIN = "https://ai-nav-flax.vercel.app"
+# 每 IP 每分钟限流。默认 10 对连续追问偏紧（触发后整个 60s 窗口全拒，体感是「一直 429」），
+# 个人站点放宽到 30，既能挡住滥用也不误伤正常使用。
+RATE_LIMIT_PER_MIN = "30"
+# DeepSeek 不提供 /embeddings 接口，向量检索无法使用，退化为 BM25-only。
+# 若不设此项，embedEnv 会回退到 OPENAI_BASE_URL 并每次发一个注定 404 的请求，
+# 还会白读十几 MB 的向量数据。
+EMBEDDING_DISABLED = "true"
+# DeepSeek V4 系默认开启思考模式（effort=high），响应慢且思考 token 同样计费，
+# 思考模式下 temperature 还会被静默忽略。站内问答不需要长链推理，关掉。
+THINKING = "disabled"
 
 # 机密走环境变量（wrangler secret put），勿写进本文件：
 #   OPENAI_API_KEY, OPENAI_BASE_URL, MODEL, EMBEDDING_MODEL

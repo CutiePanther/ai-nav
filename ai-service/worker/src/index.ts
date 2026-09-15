@@ -12,6 +12,10 @@ export interface Env extends KVEnv {
   EMBEDDING_API_KEY?: string;
   EMBEDDING_MODEL?: string;
   EMBEDDING_QUERY_PREFIX?: string;
+  /** 设为 'true' 可显式关闭向量检索（上游不提供 /embeddings 时），退化为 BM25-only */
+  EMBEDDING_DISABLED?: string;
+  /** DeepSeek 系：'disabled' 关闭思考模式。默认不传该参数，保持对其他网关的兼容 */
+  THINKING?: string;
   ALLOWED_ORIGIN?: string;
   RATE_LIMIT_PER_MIN?: string;
   /** 检索 topK（默认 5）；上下文每来源截取字符数（默认 900）；携带的历史会话轮数上限（默认 6） */
@@ -31,6 +35,9 @@ function log(event: string, fields: Record<string, unknown> = {}) {
 interface ChatMsg { role: 'user' | 'assistant'; content: string }
 
 function embedEnv(env: Env): EmbedEnv | null {
+  // 显式关闭向量检索。上游不提供 /embeddings 时（如 DeepSeek）用它，
+  // 否则每次提问都会发一次注定 404 的请求，还会白读 14MB 向量数据。
+  if (env.EMBEDDING_DISABLED === 'true') return null;
   const base = env.EMBEDDING_BASE_URL || env.OPENAI_BASE_URL || '';
   const key = env.EMBEDDING_API_KEY || env.OPENAI_API_KEY || '';
   if (!base || !key) return null;
@@ -184,25 +191,37 @@ async function handleChat(req: Request, env: Env): Promise<Response> {
     { role: 'user', content: question },
   ];
 
+  // DeepSeek V4 系默认开启思考模式（effort=high）：响应更慢、思考 token 也计费，
+  // 且思考模式下 temperature 会被静默忽略。站内问答不需要长链推理，配 THINKING=disabled 关掉。
+  // 默认不传该参数，避免其他 OpenAI 兼容网关因不识别而报错。
+  const reqBody: Record<string, unknown> = {
+    model: env.MODEL || 'deepseek-flash',
+    messages,
+    stream: true,
+    max_tokens: 800,
+    temperature: 0.3,
+  };
+  if (env.THINKING === 'disabled') reqBody.thinking = { type: 'disabled' };
+
   const upstreamRes = await fetch(`${baseURL}/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: env.MODEL || 'deepseek-chat',
-      messages,
-      stream: true,
-      max_tokens: 800,
-      temperature: 0.3,
-    }),
+    body: JSON.stringify(reqBody),
   }).catch((e: unknown) => e as Error);
 
   if (upstreamRes instanceof Error || !upstreamRes.ok || !upstreamRes.body) {
     const status = upstreamRes instanceof Error ? 502 : upstreamRes.status;
-    log('chat_upstream_error', { ip, status, ms: Date.now() - started, qlen: question.length });
+    // 上游错误体往往带关键信息，只记 status 无法区分「欠费」还是「限流」。
+    // 例：智谱在余额不足时会返回 429 + error.code 1113，和并发超限 1301 是两回事。
+    let upstreamDetail = '';
+    if (!(upstreamRes instanceof Error)) {
+      try { upstreamDetail = (await upstreamRes.text()).slice(0, 300); } catch { /* 读取失败忽略 */ }
+    }
+    log('chat_upstream_error', { ip, status, detail: upstreamDetail, ms: Date.now() - started, qlen: question.length });
     const text = new TextEncoder();
     const stream = new ReadableStream({
       start(controller) {
-        controller.enqueue(text.encode(sse('error', `LLM error: ${status}`)));
+        controller.enqueue(text.encode(sse('error', `LLM error: ${status}${upstreamDetail ? ' | ' + upstreamDetail : ''}`)));
         controller.close();
       },
     });

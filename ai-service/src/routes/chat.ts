@@ -32,7 +32,7 @@ chat.post('/chat', async (c) => {
 
   const apiKey = process.env.OPENAI_API_KEY;
   const baseURL = process.env.OPENAI_BASE_URL;
-  const model = process.env.MODEL || 'deepseek-chat';
+  const model = process.env.MODEL || 'deepseek-flash';
 
   // P0 占位：未配置 key 时流式回显
   if (!apiKey || !baseURL) {

@@ -397,8 +397,10 @@ const roadmapCount = (await getCollection('roadmaps')).length;
         // 读取服务端 JSON 错误体（如 400/429），取更可读的提示
         let detail = '';
         try { detail = (await res.json()).error || ''; } catch {}
-        const msg = detail ? `${res.status}: ${detail}` : `服务返回 ${res.status}`;
-        throw new Error(msg);
+        if (res.status === 429) {
+          throw new Error(detail || '提问太频繁了，休息一分钟再试');
+        }
+        throw new Error(detail ? `${res.status}: ${detail}` : `服务返回 ${res.status}`);
       }
 
       currentStream = res.body.getReader();
@@ -478,7 +480,15 @@ const roadmapCount = (await getCollection('roadmaps')).length;
           bubble.innerHTML = '<div class="answer-text chat-stopped">已停止生成。</div>';
         }
       } else {
-        const msg = err && err.message ? err.message : String(err);
+        // fetch 抛 TypeError 属于网络层失败（服务未启动 / 地址配错 / CORS 被拒 / 混合内容被拦）。
+        // 此时响应根本没拿到，err.message 只有一句 "Failed to fetch"，对用户毫无信息量，
+        // 所以换成能直接定位问题的提示，并把实际请求地址带出来。
+        const isNetworkError = err instanceof TypeError;
+        const msg = isNetworkError
+          ? `无法连接 AI 服务（${API_BASE}）。可能原因：服务未启动、地址配置有误，或该地址未允许本站来源跨域访问`
+          : err && err.message
+            ? err.message
+            : String(err);
         bubble.innerHTML = `<div class="answer-text chat-error">⚠️ ${escapeHtml(msg)}。</div>`;
       }
     } finally {

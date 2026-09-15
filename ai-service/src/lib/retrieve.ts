@@ -121,6 +121,17 @@ export async function retrieveHybrid(query: string, topK = 5): Promise<Hit[]> {
   const qv = await embedTexts([query], true);
   if (!qv) return rank(bm25Hits, topK);
 
+  // 维度校验：换了 embedding 模型却没重建索引时，维度不一致会让 cosine 算出 NaN，
+  // 排序静默错乱且不报错。显式拦住并降级 BM25。
+  const docDim = vectors[0]?.length ?? 0;
+  if (!docDim || qv[0].length !== docDim) {
+    console.warn(
+      `[retrieve] 向量维度不匹配（query ${qv[0].length} vs doc ${docDim}），已降级 BM25-only。` +
+        `换 embedding 模型后需重新构建索引。`,
+    );
+    return rank(bm25Hits, topK);
+  }
+
   // 向量相似度 Top-10
   const scored = vectors
     .map((v, c) => ({ c, score: cosine(qv[0], v) }))

@@ -87,13 +87,28 @@ export async function retrieveHybrid(env: KVEnv, embEnv: EmbedEnv | null, query:
   if (terms.length === 0) return [];
   const bm25Hits = bm25Search(index, terms, 10);
 
+  // 先判断是否具备向量检索条件再读向量：向量数据有十几 MB，
+  // 关掉 embedding 时就完全不必浪费这次 KV 读取。
+  if (!embEnv) return rank(bm25Hits, topK);
+
   const vectors = await loadVectors(env);
-  if (!vectors || vectors.length !== index.chunks.length || !embEnv) {
+  if (!vectors || vectors.length !== index.chunks.length) {
     return rank(bm25Hits, topK);
   }
 
   const qv = await embedTexts(embEnv, [query], true);
   if (!qv) return rank(bm25Hits, topK);
+
+  // 维度校验：换了 embedding 模型却没重建索引时，1024 维的 query 去比 2560 维的 doc，
+  // cosine 会算出 NaN，排序静默错乱且不报任何错。这里显式拦住并降级为 BM25。
+  const docDim = vectors[0]?.length ?? 0;
+  if (!docDim || qv[0].length !== docDim) {
+    console.warn(
+      `[retrieve] 向量维度不匹配（query ${qv[0].length} vs doc ${docDim}），已降级 BM25-only。` +
+        `换 embedding 模型后需重新构建索引并重传 KV。`,
+    );
+    return rank(bm25Hits, topK);
+  }
 
   const scored = vectors
     .map((v, c) => ({ c, score: cosine(qv[0], v) }))

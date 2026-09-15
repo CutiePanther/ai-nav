@@ -1,0 +1,79 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const all = await getCollection('guides');
+// 按系列分组，系列内按 order 升序
+const categories = [...new Set(all.map((g) => g.data.category))];
+const grouped = categories.map((cat) => ({
+  cat,
+  items: all.filter((g) => g.data.category === cat).sort((a, b) => a.data.order - b.data.order),
+}));
+
+const totalWords = all.reduce((n, g) => n + (g.body?.length ?? 0), 0);
+const totalMinutes = Math.max(1, Math.round(totalWords / 400)); // 中文约 400 字/分钟
+
+// 结构化数据（引擎收录）
+const itemList = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'AI 开发实战教程',
+  itemListElement: all.map((g, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: g.data.title,
+    url: `/guides/${g.id}/`,
+  })),
+};
+---
+
+<Layout title="实战教程" description="站内原创实战教程：从安装到部署，逐步拆解框架与工具链的用法、参数与常见坑">
+  <script is:inline type="application/ld+json">{JSON.stringify(itemList)}</script>
+
+  <header class="mb-8">
+    <h1 class="text-3xl font-bold sm:text-4xl">实战教程</h1>
+    <p class="mt-3 max-w-2xl text-[var(--text-2)]">
+      不只告诉你「什么是什么」，而是把安装、配置、代码、参数、坑一次讲完。
+      每篇都带可运行示例与常见坑清单，照着做就能跑通。
+    </p>
+    <p class="mt-3 text-sm text-[var(--text-3)]">
+      共 {all.length} 篇 · 约 {totalMinutes} 分钟读完
+    </p>
+  </header>
+
+  {grouped.map(({ cat, items }) => (
+    <section class="mt-10">
+      <h2 class="mb-4 flex items-center gap-2 text-lg font-bold text-[var(--text-1)]">
+        <span class="h-1.5 w-1.5 rounded-full bg-[var(--accent)]"></span>
+        {cat} 系列
+        <span class="badge">{items.length} 篇</span>
+      </h2>
+
+      <div class="grid gap-3 sm:grid-cols-2">
+        {items.map((g) => (
+          <a href={`/guides/${g.id}/`} class="card card-lift group flex flex-col p-5">
+            <div class="flex items-start gap-3">
+              <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--accent)]/12 text-xs font-bold tabular-nums text-[var(--accent-text)]">
+                {String(g.data.order).padStart(2, '0')}
+              </span>
+              <h3 class="font-semibold leading-snug text-[var(--text-1)] transition group-hover:text-[var(--accent-text)]">
+                {g.data.title}
+              </h3>
+            </div>
+            <p class="mt-2.5 flex-1 text-sm leading-relaxed text-[var(--text-2)]">{g.data.description}</p>
+            <div class="mt-3 flex items-center justify-between gap-2 text-xs text-[var(--text-3)]">
+              <span class="flex flex-wrap gap-1">
+                {g.data.tags.slice(0, 2).map((t) => (
+                  <span class="rounded bg-[var(--surface-2)] px-1.5 py-0.5">#{t}</span>
+                ))}
+              </span>
+              <span class="shrink-0 font-medium text-[var(--accent-text)] opacity-0 transition group-hover:opacity-100">
+                阅读 →
+              </span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+  ))}
+</Layout>

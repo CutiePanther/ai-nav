@@ -93,4 +93,17 @@ const roadmaps = defineCollection({
   }),
 });
 
-export const collections = { docs, info, tools, faq, roadmaps };
+// 站内实战教程（有正文的长文，区别于 docs 的外链导航）
+const guides = defineCollection({
+  loader: glob({ base: './src/content/guides', pattern: '**/*.md' }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),          // 一句话简介（列表卡片用）
+    order: z.number().default(99),    // 系列内排序
+    category: z.string(),             // 所属系列：AgentScope
+    tags: z.array(z.string()).default([]),
+    updated: z.coerce.date().optional(),
+  }),
+});
+
+export const collections = { docs, info, tools, faq, roadmaps, guides };

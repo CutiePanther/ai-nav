@@ -3,7 +3,7 @@
 
 export interface Chunk {
   id: string;
-  type: 'faq' | 'roadmap-stage';
+  type: 'faq' | 'roadmap-stage' | 'guide';
   title: string;
   category: string;
   difficulty?: string;

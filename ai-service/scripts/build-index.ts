@@ -2,7 +2,7 @@
 // 用法：cd ai-service && npm run build:index
 // 输出：ai-service/data/index.json（BM25 倒排）+ data/vectors.json（chunk 向量，与 chunks 顺序对齐）
 
-import { readdirSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadEnvFile } from 'node:process';
@@ -18,13 +18,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../..'); // ai-dev-nav 根目录
 const FAQ_DIR = path.join(ROOT, 'src/content/faq');
 const ROADMAPS_DIR = path.join(ROOT, 'src/content/roadmaps');
+const GUIDES_DIR = path.join(ROOT, 'src/content/guides');
 const OUT_DIR = path.resolve(__dirname, '../data');
 const OUT_PATH = path.join(OUT_DIR, 'index.json');
 const VEC_PATH = path.join(OUT_DIR, 'vectors.json');
 
 interface Chunk {
   id: string;
-  type: 'faq' | 'roadmap-stage';
+  type: 'faq' | 'roadmap-stage' | 'guide';
   title: string;
   category: string;
   difficulty?: string;
@@ -108,6 +109,58 @@ function buildRoadmapChunks(): Chunk[] {
   return chunks;
 }
 
+// 站内实战教程：按 ## 二级标题切小节，标题带回篇名做前缀，提升检索命中精度
+function buildGuideChunks(): Chunk[] {
+  if (!existsSync(GUIDES_DIR)) return [];
+  const files = readdirSync(GUIDES_DIR).filter((f) => f.endsWith('.md'));
+  const chunks: Chunk[] = [];
+
+  for (const file of files) {
+    const slug = file.replace(/\.md$/, '');
+    const raw = readFileSync(path.join(GUIDES_DIR, file), 'utf-8');
+    const { data, content } = matter(raw);
+
+    const title = String(data.title ?? slug);
+    const category = String(data.category ?? '实战教程');
+    const intro = String(data.description ?? '').trim();
+
+    // 首个 ## 之前的内容（含 frontmatter 去掉后的引言）作为一个 chunk
+    const parts = content.split(/^## /m);
+    const head = parts.shift() ?? '';
+    const introText = `${title}\n${intro}\n${head}`.trim();
+    if (introText.length > 20) {
+      chunks.push({
+        id: `guide-${slug}-0`,
+        type: 'guide',
+        title,
+        category,
+        text: introText,
+        url: `/guides/${slug}`,
+        textLen: introText.length,
+      });
+    }
+
+    parts.forEach((sec, i) => {
+      const nl = sec.indexOf('\n');
+      const sectionTitle = nl >= 0 ? sec.slice(0, nl).trim() : sec.trim();
+      const body = nl >= 0 ? sec.slice(nl + 1).trim() : '';
+      const text = `${title} · ${sectionTitle}\n${body}`.trim();
+      if (text.length < 20) return;
+      chunks.push({
+        id: `guide-${slug}-${i + 1}`,
+        type: 'guide',
+        title: `${title} · ${sectionTitle}`,
+        category,
+        text,
+        url: `/guides/${slug}`,
+        textLen: text.length,
+      });
+    });
+  }
+
+  return chunks;
+}
+
 async function buildVectors(chunks: Chunk[]): Promise<number[][] | null> {
   const texts = chunks.map((c) => c.text);
   const vectors = await embedTexts(texts, false); // doc 端不加 query 前缀
@@ -119,7 +172,8 @@ async function buildVectors(chunks: Chunk[]): Promise<number[][] | null> {
 }
 
 async function buildIndex() {
-  const chunks = [...buildFaqChunks(), ...buildRoadmapChunks()];
+  const guideChunks = buildGuideChunks();
+  const chunks = [...buildFaqChunks(), ...buildRoadmapChunks(), ...guideChunks];
 
   // 分词 + 倒排
   const inverted: Record<string, { c: number; tf: number }[]> = {};
@@ -148,7 +202,11 @@ async function buildIndex() {
   mkdirSync(OUT_DIR, { recursive: true });
   writeFileSync(OUT_PATH, JSON.stringify(index));
 
-  console.log(`[build-index] 完成：${chunks.length} 个 chunk（faq + roadmap-stage），索引写入 ${OUT_PATH}`);
+  console.log(
+    `[build-index] 完成：${chunks.length} 个 chunk（faq ${chunks.filter((c) => c.type === 'faq').length}` +
+      ` + roadmap-stage ${chunks.filter((c) => c.type === 'roadmap-stage').length}` +
+      ` + guide ${guideChunks.length}），索引写入 ${OUT_PATH}`,
+  );
   console.log(`[build-index] 倒排词条数：${Object.keys(inverted).length}`);
 
   // 向量生成（走内网 embedding API）

@@ -55,6 +55,7 @@ export interface Hit {
 // 类型权重：问答场景下，faq 知识点优先于 roadmap 阶段（后者文本长、BM25 易虚高）
 const TYPE_BOOST: Record<string, number> = {
   faq: 1.15,
+  guide: 1.05,
   'roadmap-stage': 0.85,
 };
 

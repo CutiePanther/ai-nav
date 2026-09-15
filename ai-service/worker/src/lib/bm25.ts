@@ -1,7 +1,7 @@
 // BM25 检索（与 ai-service/src/lib/bm25.ts 同源）
 export interface Chunk {
   id: string;
-  type: 'faq' | 'roadmap-stage';
+  type: 'faq' | 'roadmap-stage' | 'guide';
   title: string;
   category: string;
   difficulty?: string;

@@ -9,7 +9,7 @@ export interface Hit {
   score: number;
 }
 
-const TYPE_BOOST: Record<string, number> = { faq: 1.15, 'roadmap-stage': 0.85 };
+const TYPE_BOOST: Record<string, number> = { faq: 1.15, guide: 1.05, 'roadmap-stage': 0.85 };
 const RRF_K = 60;
 
 // 模块级缓存：worker isolate 内热缓存，避免每请求读 KV（各 isolate 独立，可接受）

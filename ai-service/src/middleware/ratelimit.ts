@@ -22,8 +22,16 @@ export const rateLimit: MiddlewareHandler = async (c, next) => {
     return next();
   }
   if (b.count >= LIMIT) {
-    return c.json({ error: 'rate limit exceeded' }, 429);
+    const left = Math.ceil((b.resetAt - now) / 1000);
+    console.log(
+      `[rate-limit] 已拦截 ip=${ip}  本窗口第 ${b.count} 次（上限 ${LIMIT}/分钟）  ${left}s 后重置`,
+    );
+    return c.json({ error: '请求过于频繁，请稍后再试' }, 429);
   }
   b.count += 1;
+  // 接近上限时提前预警，便于判断「差一点就被限流」
+  if (b.count >= LIMIT - 2) {
+    console.log(`[rate-limit] 预警 ip=${ip}  已用 ${b.count}/${LIMIT}`);
+  }
   return next();
 };

@@ -362,18 +362,58 @@ const roadmapCount = (await getCollection('roadmaps')).length;
 
     history.push({ role: 'user', content: question });
     addMessage('user', question);
-    const { wrap, bubble } = addMessage('ai', '<span class="chat-typing"><span></span><span></span><span></span></span>');
+    // AI 消息分三层：meta（检索状态 + 思考过程）/ 正文 / 引用来源。
+    // meta 与正文用独立节点承载，这样持续更新正文时不会重建思考块，
+    // 用户手动展开/收起的状态也不会被打断。
+    const { wrap, bubble } = addMessage('ai', '');
+    bubble.innerHTML =
+      '<div class="msg-meta"></div><div class="answer-text"><span class="chat-typing"><span></span><span></span><span></span></span></div>';
+    const metaEl = bubble.querySelector('.msg-meta');
+    const answerEl = bubble.querySelector('.answer-text');
 
     let sources = [];
     let answer = '';
     let hasSources = false;
+    let thinking = '';
+    let thinkingOpen = true; // 思考过程默认展开，正文开始输出时自动收起
+    const tools = [];
+
+    // 渲染 meta 区：检索状态 chip + 思考过程折叠块
+    const renderMeta = () => {
+      let html = '';
+      for (const t of tools) {
+        const done = t.state === 'end';
+        const text = done
+          ? `已完成检索：${t.name}${t.hits != null ? ` · 命中 ${t.hits} 条` : ''}${t.ms != null ? ` · ${t.ms}ms` : ''}`
+          : `正在检索：${t.name}…`;
+        const icon = done ? '<span class="tool-chip-icon">✓</span>' : '<span class="tool-chip-spin"></span>';
+        html += `<div class="tool-chip${done ? ' is-done' : ''}">${icon}<span>${escapeHtml(text)}</span></div>`;
+      }
+      if (thinking) {
+        html +=
+          `<div class="thinking${thinkingOpen ? ' is-open' : ''}">` +
+          `<button type="button" class="thinking-head" data-toggle-thinking>` +
+          `<span class="thinking-caret">▶</span><span>思考过程</span>` +
+          `<span class="thinking-count">${thinking.length} 字</span></button>` +
+          `<div class="thinking-body">${escapeHtml(thinking)}</div></div>`;
+      }
+      metaEl.innerHTML = html;
+    };
+    // 展开/收起状态由 thinkingOpen 变量统一管理，
+    // 这样思考内容持续追加导致的重渲染不会丢失用户的操作结果
+    metaEl.addEventListener('click', (e) => {
+      if (!e.target.closest('[data-toggle-thinking]')) return;
+      thinkingOpen = !thinkingOpen;
+      renderMeta();
+    });
 
     // 流式节流：把高频 delta 合并成 ~14fps 的重渲染，长回答不再逐字触发 DOM 写入
     const FLUSH_MS = 70;
     let flushTimer = null;
+    let metaTimer = null;
     let answerStarted = false;
     const flush = () => {
-      bubble.innerHTML = `<div class="answer-text">${renderMarkdown(answer, sources)}</div>`;
+      answerEl.innerHTML = renderMarkdown(answer, sources);
       scrollToBottom();
     };
     const scheduleFlush = () => {
@@ -381,6 +421,14 @@ const roadmapCount = (await getCollection('roadmaps')).length;
       flushTimer = setTimeout(() => {
         flushTimer = null;
         flush();
+      }, FLUSH_MS);
+    };
+    // 思考内容是逐 token 推来的，这里同样节流，否则每 token 重建一次思考块
+    const scheduleMeta = () => {
+      if (metaTimer) return;
+      metaTimer = setTimeout(() => {
+        metaTimer = null;
+        renderMeta();
       }, FLUSH_MS);
     };
 
@@ -426,7 +474,36 @@ const roadmapCount = (await getCollection('roadmaps')).length;
           if (!dataLines.length) continue;
           const payload = dataLines.join('\n');
 
-          if (event === 'sources') {
+          if (event === 'tool') {
+            // 检索过程：start（转圈）→ end（带命中数与耗时）
+            try {
+              const t = JSON.parse(payload);
+              if (t.state === 'start') {
+                tools.push({ name: t.name, state: 'start' });
+              } else {
+                const cur = [...tools].reverse().find((x) => x.state === 'start' && x.name === t.name);
+                if (cur) {
+                  cur.state = 'end';
+                  cur.hits = t.hits;
+                  cur.ms = t.ms;
+                } else {
+                  tools.push({ name: t.name, state: 'end', hits: t.hits, ms: t.ms });
+                }
+              }
+              renderMeta();
+              scrollToBottom();
+            } catch {}
+          } else if (event === 'thinking') {
+            // 思考过程：上游持续推送的推理增量，节流后追加进折叠块
+            try {
+              const d = JSON.parse(payload).d || '';
+              if (d) {
+                thinking += d;
+                scheduleMeta();
+                if (thinkingOpen) scrollToBottom();
+              }
+            } catch {}
+          } else if (event === 'sources') {
             try { sources = (JSON.parse(payload).sources) || []; hasSources = true; } catch {}
           } else if (event === 'delta') {
             if (payload === '[DONE]') continue;
@@ -435,8 +512,13 @@ const roadmapCount = (await getCollection('roadmaps')).length;
               if (c) {
                 answer += c;
                 if (!answerStarted) {
-                  // 首个增量：立刻把三圆点替换成正文，避免"停顿感"
+                  // 首个增量：立刻把三圆点替换成正文，避免"停顿感"；
+                  // 同时收起思考过程，把注意力让给正文（用户仍可手动展开）
                   answerStarted = true;
+                  if (thinking) {
+                    thinkingOpen = false;
+                    renderMeta();
+                  }
                   flush();
                 } else {
                   scheduleFlush();
@@ -452,21 +534,25 @@ const roadmapCount = (await getCollection('roadmaps')).length;
       // 流结束：记录 assistant 上下文（仅成功时，异常会 throw 跳出不入库）
       if (answer) history.push({ role: 'assistant', content: answer });
 
-      // 流结束：渲染完整 Markdown
-      let html = '';
+      // 流结束：最终渲染。
+      // 只更新正文节点、追加来源节点，不重建整个 bubble —— 重建会丢掉
+      // meta 区（思考过程折叠块）上挂的事件监听。
       if (!answer) {
-        html = `<div class="answer-text">（无返回内容）</div>`;
+        answerEl.innerHTML = '<span class="chat-empty">（无返回内容）</span>';
       } else {
-        html = `<div class="answer-text">${renderMarkdown(answer, sources)}</div>`;
-        if (hasSources && sources.length > 0) {
-          html += `<div class="sources"><p class="sources-title">参考来源</p><ul>`;
-          sources.forEach((s, i) => {
-            html += `<li><a href="${s.url}"><span class="src-idx">${i + 1}</span><span class="src-body"><span class="src-title">${escapeHtml(s.title)}</span><span class="src-cat">${escapeHtml(s.category)}</span>${s.excerpt ? `<span class="src-excerpt">${escapeHtml(s.excerpt)}</span>` : ''}</span></a></li>`;
-          });
-          html += `</ul></div>`;
-        }
+        answerEl.innerHTML = renderMarkdown(answer, sources);
       }
-      bubble.innerHTML = html;
+      if (hasSources && sources.length > 0) {
+        const srcEl = document.createElement('div');
+        srcEl.className = 'sources';
+        let sHtml = '<p class="sources-title">参考来源</p><ul>';
+        sources.forEach((s, i) => {
+          sHtml += `<li><a href="${escapeHtml(s.url)}"><span class="src-idx">${i + 1}</span><span class="src-body"><span class="src-title">${escapeHtml(s.title)}</span><span class="src-cat">${escapeHtml(s.category)}</span>${s.excerpt ? `<span class="src-excerpt">${escapeHtml(s.excerpt)}</span>` : ''}</span></a></li>`;
+        });
+        sHtml += '</ul>';
+        srcEl.innerHTML = sHtml;
+        bubble.appendChild(srcEl);
+      }
       attachCopyButton(wrap, answer);
       scrollToBottom();
     } catch (err) {
@@ -474,10 +560,14 @@ const roadmapCount = (await getCollection('roadmaps')).length;
         // 用户主动停止：保留已生成内容，不算错误
         if (answer) {
           history.push({ role: 'assistant', content: answer });
-          bubble.innerHTML = `<div class="answer-text">${renderMarkdown(answer, sources)}</div><p class="chat-stopped">已停止生成</p>`;
+          answerEl.innerHTML = renderMarkdown(answer, sources);
+          const p = document.createElement('p');
+          p.className = 'chat-stopped';
+          p.textContent = '已停止生成';
+          bubble.appendChild(p);
           attachCopyButton(wrap, answer);
         } else {
-          bubble.innerHTML = '<div class="answer-text chat-stopped">已停止生成。</div>';
+          answerEl.innerHTML = '<span class="chat-stopped">已停止生成。</span>';
         }
       } else {
         // fetch 抛 TypeError 属于网络层失败（服务未启动 / 地址配错 / CORS 被拒 / 混合内容被拦）。
@@ -489,10 +579,11 @@ const roadmapCount = (await getCollection('roadmaps')).length;
           : err && err.message
             ? err.message
             : String(err);
-        bubble.innerHTML = `<div class="answer-text chat-error">⚠️ ${escapeHtml(msg)}。</div>`;
+        answerEl.innerHTML = `<span class="chat-error">⚠️ ${escapeHtml(msg)}。</span>`;
       }
     } finally {
       if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+      if (metaTimer) { clearTimeout(metaTimer); metaTimer = null; }
       setBusy(false);
       inputEl.focus();
     }
@@ -806,8 +897,65 @@ const roadmapCount = (await getCollection('roadmaps')).length;
   .chat-widget .answer-text th { background: rgba(99, 102, 241, 0.14); color: #fff; font-weight: 600; }
   .chat-widget .answer-text hr { border: none; border-top: 1px solid rgba(148, 163, 184, 0.16); margin: 0.8em 0; }
 
-  /* 主动停止提示 */
-  .chat-widget .chat-stopped { margin: 6px 0 0; font-size: 12px; color: #8b98ad; }
+  /* ============ 检索状态 & 思考过程 ============ */
+  .chat-widget .msg-meta:empty { display: none; }
+
+  /* 检索状态 chip：进行中转圈，完成后绿勾并带上命中数与耗时 */
+  .chat-widget .tool-chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    margin: 0 0 8px; padding: 4px 11px; border-radius: 999px;
+    font-size: 12px;
+    background: rgba(99, 102, 241, 0.14);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: #c7d2fe;
+  }
+  .chat-widget .tool-chip.is-done {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #6ee7b7;
+  }
+  .chat-widget .tool-chip-icon { font-size: 11px; }
+  .chat-widget .tool-chip-spin {
+    width: 10px; height: 10px; flex: none;
+    border: 1.5px solid currentColor; border-right-color: transparent;
+    border-radius: 50%;
+    animation: chat-spin 0.7s linear infinite;
+  }
+  @keyframes chat-spin { to { transform: rotate(360deg); } }
+
+  /* 思考过程折叠块：默认展开，正文开始输出时自动收起 */
+  .chat-widget .thinking {
+    margin: 0 0 8px; border-radius: 10px; overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: rgba(148, 163, 184, 0.06);
+  }
+  .chat-widget .thinking-head {
+    display: flex; align-items: center; gap: 7px;
+    width: 100%; padding: 7px 11px;
+    background: transparent; border: none;
+    font-size: 12px; color: #8b98ad; cursor: pointer; text-align: left;
+    font-family: inherit;
+    transition: background 0.15s, color 0.15s;
+  }
+  .chat-widget .thinking-head:hover { background: rgba(148, 163, 184, 0.1); color: #b6c2d4; }
+  .chat-widget .thinking-caret { font-size: 9px; transition: transform 0.18s; }
+  .chat-widget .thinking.is-open .thinking-caret { transform: rotate(90deg); }
+  .chat-widget .thinking-count { margin-left: auto; font-size: 11px; opacity: 0.75; }
+  .chat-widget .thinking-body {
+    display: none;
+    padding: 2px 12px 10px;
+    border-top: 1px solid rgba(148, 163, 184, 0.14);
+    font-size: 12.5px; line-height: 1.7; color: #94a3b8;
+    white-space: pre-wrap; word-break: break-word;
+    max-height: 220px; overflow-y: auto;
+  }
+  .chat-widget .thinking.is-open .thinking-body { display: block; }
+
+  /* 空态 / 错误 / 主动停止提示 */
+  .chat-widget .chat-empty { color: #8b98ad; }
+  .chat-widget .chat-error { color: #fca5a5; }
+  .chat-widget .chat-stopped { font-size: 12px; color: #8b98ad; }
+  .chat-widget p.chat-stopped { margin: 6px 0 0; }
 
   /* 引用徽标 */
   .chat-widget .ref-badge {

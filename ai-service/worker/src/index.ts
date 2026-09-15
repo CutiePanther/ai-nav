@@ -155,123 +155,128 @@ async function handleChat(req: Request, env: Env): Promise<Response> {
 
   const hdrs = { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive', ...corsHeaders(req, env) };
 
-  // 未配置 LLM → 回显骨架（检索命中情况），不清空索引能力
   const apiKey = env.OPENAI_API_KEY;
   const baseURL = env.OPENAI_BASE_URL;
-  if (!apiKey || !baseURL) {
-    const hits = await retrieveHybrid(env, embedEnv(env), question, topK);
-    log('chat_skeleton', { ip, qlen: question.length, hits: hits.length, ms: Date.now() - started });
-    const text = hits.length
-      ? `骨架已就绪（未配置 LLM）。检索命中 ${hits.length} 条：${hits.map((h) => h.chunk.title).join('；')}。在 Worker 配置 OPENAI_API_KEY / OPENAI_BASE_URL 后将返回完整回答。`
-      : 'AI 服务骨架已就绪。配置 OPENAI_API_KEY 与 OPENAI_BASE_URL 后将接入真实 RAG 生成。';
-    const enc = new TextEncoder();
-    const stream = new ReadableStream({
-      start(controller) {
-        controller.enqueue(enc.encode(sse('delta', JSON.stringify({ choices: [{ delta: { content: text } }] }))));
-        controller.enqueue(enc.encode(sse('done', '[DONE]')));
-        controller.close();
-      },
-    });
-    return new Response(stream, { headers: hdrs });
-  }
-
-  const hits = await retrieveHybrid(env, embedEnv(env), question, topK);
-  const context = buildContextFromHits(hits, chunkLen);
-  const system = context ? `${BASE_RULES}\n\n<context>\n${context}\n</context>` : BASE_RULES;
-  const sources = hits.map((h) => ({
-    title: h.chunk.title,
-    category: h.chunk.category,
-    url: h.chunk.url,
-    excerpt: makeExcerpt(h.chunk.text),
-  }));
-
-  const messages: ChatMsg[] = [
-    { role: 'system', content: system },
-    ...history,
-    { role: 'user', content: question },
-  ];
-
-  // DeepSeek V4 系默认开启思考模式（effort=high）：响应更慢、思考 token 也计费，
-  // 且思考模式下 temperature 会被静默忽略。站内问答不需要长链推理，配 THINKING=disabled 关掉。
-  // 默认不传该参数，避免其他 OpenAI 兼容网关因不识别而报错。
-  const reqBody: Record<string, unknown> = {
-    model: env.MODEL || 'deepseek-flash',
-    messages,
-    stream: true,
-    max_tokens: 800,
-    temperature: 0.3,
-  };
-  if (env.THINKING === 'disabled') reqBody.thinking = { type: 'disabled' };
-
-  const upstreamRes = await fetch(`${baseURL}/chat/completions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify(reqBody),
-  }).catch((e: unknown) => e as Error);
-
-  if (upstreamRes instanceof Error || !upstreamRes.ok || !upstreamRes.body) {
-    const status = upstreamRes instanceof Error ? 502 : upstreamRes.status;
-    // 上游错误体往往带关键信息，只记 status 无法区分「欠费」还是「限流」。
-    // 例：智谱在余额不足时会返回 429 + error.code 1113，和并发超限 1301 是两回事。
-    let upstreamDetail = '';
-    if (!(upstreamRes instanceof Error)) {
-      try { upstreamDetail = (await upstreamRes.text()).slice(0, 300); } catch { /* 读取失败忽略 */ }
-    }
-    log('chat_upstream_error', { ip, status, detail: upstreamDetail, ms: Date.now() - started, qlen: question.length });
-    const text = new TextEncoder();
-    const stream = new ReadableStream({
-      start(controller) {
-        controller.enqueue(text.encode(sse('error', `LLM error: ${status}${upstreamDetail ? ' | ' + upstreamDetail : ''}`)));
-        controller.close();
-      },
-    });
-    return new Response(stream, { headers: hdrs, status: 200 });
-  }
-
-  log('chat_start', { ip, qlen: question.length, hits: hits.length, turns: history.length, topK, ms: Date.now() - started });
-
-  // 透传上游 SSE 并转为 chat 前端协议事件（sources → delta → done）
   const enc = new TextEncoder();
-  const reader = upstreamRes.body.getReader();
-  const decoder = new TextDecoder();
-  let buf = '';
-  let sentSources = false;
 
+  // 「检索 → 生成」整体放进流里。
+  // 若检索放在流外同步执行，等流建立时它已经跑完，「正在检索」会一闪而过甚至看不到；
+  // 放进流内才能真正呈现 tool start → tool end 的时序。
   const down = new ReadableStream({
     async start(controller) {
-      try {
-        // 先发引用来源，前端渲染引用卡片
-        controller.enqueue(enc.encode(sse('sources', JSON.stringify({ sources }))));
-        sentSources = true;
+      const send = (event: string, data: string) => {
+        try { controller.enqueue(enc.encode(sse(event, data))); } catch { /* 客户端已断开 */ }
+      };
 
+      try {
+        // ---------- 1. 检索：tool start → tool end ----------
+        const rStart = Date.now();
+        send('tool', JSON.stringify({ name: '站内知识库', state: 'start' }));
+        const hits = await retrieveHybrid(env, embedEnv(env), question, topK);
+        const rms = Date.now() - rStart;
+        send('tool', JSON.stringify({ name: '站内知识库', state: 'end', hits: hits.length, ms: rms }));
+
+        const sources = hits.map((h) => ({
+          title: h.chunk.title,
+          category: h.chunk.category,
+          url: h.chunk.url,
+          excerpt: makeExcerpt(h.chunk.text),
+        }));
+        send('sources', JSON.stringify({ sources }));
+
+        // ---------- 2. 未配置 LLM → 骨架回显 ----------
+        if (!apiKey || !baseURL) {
+          log('chat_skeleton', { ip, qlen: question.length, hits: hits.length, rms, ms: Date.now() - started });
+          const text = hits.length
+            ? `骨架已就绪（未配置 LLM）。检索命中 ${hits.length} 条：${hits.map((h) => h.chunk.title).join('；')}。在 Worker 配置 OPENAI_API_KEY / OPENAI_BASE_URL 后将返回完整回答。`
+            : 'AI 服务骨架已就绪。配置 OPENAI_API_KEY 与 OPENAI_BASE_URL 后将接入真实 RAG 生成。';
+          send('delta', JSON.stringify({ choices: [{ delta: { content: text } }] }));
+          send('done', '[DONE]');
+          return;
+        }
+
+        // ---------- 3. 组装上下文并调用上游 ----------
+        const context = buildContextFromHits(hits, chunkLen);
+        const system = context ? `${BASE_RULES}\n\n<context>\n${context}\n</context>` : BASE_RULES;
+        const messages: ChatMsg[] = [
+          { role: 'system', content: system },
+          ...history,
+          { role: 'user', content: question },
+        ];
+
+        // DeepSeek V4 系默认开启思考模式（effort=high）：响应更慢、思考 token 也计费，
+        // 且思考模式下 temperature 会被静默忽略。默认不传该参数，避免其他兼容网关不识别而报错。
+        const reqBody: Record<string, unknown> = {
+          model: env.MODEL || 'deepseek-flash',
+          messages,
+          stream: true,
+          max_tokens: 800,
+          temperature: 0.3,
+        };
+        if (env.THINKING === 'disabled') reqBody.thinking = { type: 'disabled' };
+
+        log('chat_start', { ip, qlen: question.length, hits: hits.length, turns: history.length, topK, rms, ms: Date.now() - started });
+
+        const upstreamRes = await fetch(`${baseURL}/chat/completions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+          body: JSON.stringify(reqBody),
+        }).catch((e: unknown) => e as Error);
+
+        if (upstreamRes instanceof Error || !upstreamRes.ok || !upstreamRes.body) {
+          const status = upstreamRes instanceof Error ? 502 : upstreamRes.status;
+          // 上游错误体往往带关键信息，只记 status 无法区分「欠费」还是「限流」。
+          // 例：智谱在余额不足时会返回 429 + error.code 1113，和并发超限 1301 是两回事。
+          let upstreamDetail = '';
+          if (!(upstreamRes instanceof Error)) {
+            try { upstreamDetail = (await upstreamRes.text()).slice(0, 300); } catch { /* 读取失败忽略 */ }
+          }
+          log('chat_upstream_error', { ip, status, detail: upstreamDetail, ms: Date.now() - started, qlen: question.length });
+          send('error', `LLM error: ${status}${upstreamDetail ? ' | ' + upstreamDetail : ''}`);
+          return;
+        }
+
+        // ---------- 4. 透传上游：思考内容走 thinking，正文走 delta ----------
+        const reader = upstreamRes.body.getReader();
+        const decoder = new TextDecoder();
+        let sseBuf = '';
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          buf += decoder.decode(value, { stream: true });
-          const lines = buf.split('\n');
-          buf = lines.pop() ?? '';
+          sseBuf += decoder.decode(value, { stream: true });
+          const lines = sseBuf.split('\n');
+          sseBuf = lines.pop() ?? '';
           for (const line of lines) {
             if (!line.startsWith('data:')) continue;
             const payload = line.slice(5).trim();
             if (!payload) continue;
-            if (payload === '[DONE]') {
-              controller.enqueue(enc.encode(sse('done', '[DONE]')));
-              continue;
-            }
+            if (payload === '[DONE]') { send('done', '[DONE]'); continue; }
+
+            let handled = false;
             try {
-              const obj = JSON.parse(payload);
-              const delta = obj.choices?.[0]?.delta;
-              if (delta && !delta.content && delta.reasoning_content) continue;
+              const delta = JSON.parse(payload).choices?.[0]?.delta;
+              if (delta) {
+                // 思考模式开启时上游会持续推 reasoning_content，转成 thinking 事件给前端折叠展示
+                if (delta.reasoning_content) {
+                  send('thinking', JSON.stringify({ d: delta.reasoning_content }));
+                  handled = true;
+                }
+                if (delta.content) {
+                  send('delta', payload);
+                  handled = true;
+                }
+              }
             } catch { /* 非 JSON 行照常转发 */ }
-            controller.enqueue(enc.encode(sse('delta', payload)));
+            // 既非思考也非正文的 delta（如 tool_calls）保持原样透传
+            if (!handled) send('delta', payload);
           }
         }
       } catch (err) {
-        controller.enqueue(enc.encode(sse('error', err instanceof Error ? err.message : String(err))));
+        send('error', err instanceof Error ? err.message : String(err));
       } finally {
         log('chat_done', { ip, ms: Date.now() - started });
-        try { reader.releaseLock(); } catch { /* ignore */ }
-        controller.close();
+        // reader 定义在 try 块内，此处不再引用；controller.close() 会终止下游流
+        try { controller.close(); } catch { /* ignore */ }
       }
     },
   });

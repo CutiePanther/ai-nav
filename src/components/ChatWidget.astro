@@ -86,15 +86,44 @@ const roadmapCount = (await getCollection('roadmaps')).length;
 <script>
   import { marked } from 'marked';
   import DOMPurify from 'dompurify';
+  // 代码高亮：只注册站内常见语言，避免全量包体积膨胀
+  import hljs from 'highlight.js/lib/core';
+  import langPython from 'highlight.js/lib/languages/python';
+  import langBash from 'highlight.js/lib/languages/bash';
+  import langJson from 'highlight.js/lib/languages/json';
+  import langJavascript from 'highlight.js/lib/languages/javascript';
+  import langTypescript from 'highlight.js/lib/languages/typescript';
+  import langYaml from 'highlight.js/lib/languages/yaml';
+  import langSql from 'highlight.js/lib/languages/sql';
+  import langXml from 'highlight.js/lib/languages/xml';
+  import 'highlight.js/styles/github-dark.css';
+
+  hljs.registerLanguage('python', langPython);
+  hljs.registerLanguage('bash', langBash);
+  hljs.registerLanguage('shell', langBash);
+  hljs.registerLanguage('json', langJson);
+  hljs.registerLanguage('javascript', langJavascript);
+  hljs.registerLanguage('js', langJavascript);
+  hljs.registerLanguage('typescript', langTypescript);
+  hljs.registerLanguage('ts', langTypescript);
+  hljs.registerLanguage('yaml', langYaml);
+  hljs.registerLanguage('sql', langSql);
+  hljs.registerLanguage('xml', langXml);
+  hljs.registerLanguage('html', langXml);
+
+  marked.setOptions({ gfm: true, breaks: true });
 
   // AI 服务地址：构建时可经 PUBLIC_AI_API_BASE  覆盖
   const API_BASE = (import.meta.env.PUBLIC_AI_API_BASE || 'http://localhost:8787').replace(/\/$/, '');
 
   // 站外链接新窗口打开（一次性配置）
   DOMPurify.addHook('afterSanitizeAttributes', (node) => {
-    if (node.tagName === 'A' && /^https?:\/\//.test(node.getAttribute('href') || '')) {
-      node.setAttribute('target', '_blank');
-      node.setAttribute('rel', 'noopener noreferrer');
+    if (node.tagName === 'A') {
+      const href = node.getAttribute('href') || '';
+      if (/^https?:\/\//.test(href)) {
+        node.setAttribute('target', '_blank');
+        node.setAttribute('rel', 'noopener noreferrer');
+      }
     }
   });
 
@@ -114,6 +143,8 @@ const roadmapCount = (await getCollection('roadmaps')).length;
 
   let busy = false;
   let currentStream = null;
+  // AbortController：真正中止底层 fetch，而不只是停止读取
+  let controller = null;
   // 多轮会话上下文：user + ai 交替，随请求发给服务端，新对话时清空
   let history = [];
 
@@ -138,16 +169,84 @@ const roadmapCount = (await getCollection('roadmaps')).length;
       sendBtn.classList.remove('is-stop');
       sendBtn.setAttribute('aria-label', '发送');
       currentStream = null;
+      controller = null;
     }
   }
+  // 中止生成：abort 直接断掉底层请求，reader.read() 随之抛出 AbortError
+  function stopStream() {
+    if (controller) {
+      try { controller.abort(); } catch {}
+    }
+    currentStream = null;
+    setBusy(false);
+  }
+  // 代码高亮：手工生成 innerHTML（不用 hljs.highlightElement，它依赖真实 DOM 生命周期，
+  // 在离屏文档里不可靠）。参考 agentscope 的 web/app.js。
+  function highlightCode(codeEl) {
+    const text = codeEl.textContent || '';
+    const lang = (codeEl.className.match(/language-([\w+-]+)/) || [])[1] || '';
+    let html;
+    try {
+      if (lang && hljs.getLanguage(lang)) {
+        html = hljs.highlight(text, { language: lang }).value;
+      } else {
+        html = hljs.highlightAuto(text).value;
+      }
+    } catch {
+      html = escapeHtml(text);
+    }
+    codeEl.innerHTML = html;
+    codeEl.classList.add('hljs');
+    return lang || 'text';
+  }
+
+  // Markdown → 安全 HTML；离屏后处理代码块（语言栏 + 复制按钮）、表格（横向滚动）、引用徽标
   function renderMarkdown(text, sources) {
-    let html = DOMPurify.sanitize(marked.parse(text));
-    html = html.replace(/\[ref:(\d+)\]/g, (m, n) => {
+    const raw = marked.parse(text || '');
+    const clean = DOMPurify.sanitize(raw, { ADD_ATTR: ['target', 'rel'] });
+
+    // 在离屏文档里做结构后处理，避免多次触发真实 DOM 重排
+    const doc = new DOMParser().parseFromString(`<div id="r">${clean}</div>`, 'text/html');
+    const box = doc.getElementById('r');
+
+    // 表格：套一层横向滚动容器，窄屏不撑破气泡
+    box.querySelectorAll('table').forEach((t) => {
+      const wrap = doc.createElement('div');
+      wrap.className = 'md-table-wrap';
+      t.parentNode.insertBefore(wrap, t);
+      wrap.appendChild(t);
+    });
+
+    // 代码块：高亮 + 语言栏 + 复制按钮
+    box.querySelectorAll('pre > code').forEach((code) => {
+      const lang = highlightCode(code);
+      const pre = code.parentNode;
+      const block = doc.createElement('div');
+      block.className = 'md-code-block';
+      const bar = doc.createElement('div');
+      bar.className = 'md-code-bar';
+      const label = doc.createElement('span');
+      label.textContent = lang;
+      const btn = doc.createElement('button');
+      btn.type = 'button';
+      btn.className = 'md-code-copy';
+      btn.dataset.copyCode = '';
+      btn.textContent = '复制';
+      bar.appendChild(label);
+      bar.appendChild(btn);
+      pre.parentNode.insertBefore(block, pre);
+      block.appendChild(bar);
+      block.appendChild(pre);
+    });
+
+    // [ref:N] → 可点击徽标（在结构处理之后做，避免 href 被 sanitize 剥掉）
+    box.innerHTML = box.innerHTML.replace(/\[ref:(\d+)\]/g, (m, n) => {
       const src = sources[Number(n) - 1];
       if (!src) return `[${n}]`;
-      return `<a href="${src.url}" class="ref-badge" title="${escapeHtml(src.title)}">[${n}]</a>`;
+      return `<a href="${escapeHtml(src.url)}" class="ref-badge" title="${escapeHtml(src.title)}">[${n}]</a>`;
     });
-    return html;
+
+    return box.innerHTML;
   }
 
   // ---------- 添加消息 ----------
@@ -252,11 +351,7 @@ const roadmapCount = (await getCollection('roadmaps')).length;
   // ---------- 发送 / 停止 ----------
   async function send() {
     if (busy) {
-      if (currentStream) {
-        try { currentStream.cancel(); } catch {}
-        currentStream = null;
-        setBusy(false);
-      }
+      stopStream();
       return;
     }
     const question = inputEl.value.trim();
@@ -273,11 +368,30 @@ const roadmapCount = (await getCollection('roadmaps')).length;
     let answer = '';
     let hasSources = false;
 
+    // 流式节流：把高频 delta 合并成 ~14fps 的重渲染，长回答不再逐字触发 DOM 写入
+    const FLUSH_MS = 70;
+    let flushTimer = null;
+    let answerStarted = false;
+    const flush = () => {
+      bubble.innerHTML = `<div class="answer-text">${renderMarkdown(answer, sources)}</div>`;
+      scrollToBottom();
+    };
+    const scheduleFlush = () => {
+      if (flushTimer) return;
+      flushTimer = setTimeout(() => {
+        flushTimer = null;
+        flush();
+      }, FLUSH_MS);
+    };
+
+    controller = new AbortController();
+
     try {
       const res = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question, history: history.slice(-12) }),
+        signal: controller.signal,
       });
       if (!res.ok || !res.body) {
         // 读取服务端 JSON 错误体（如 400/429），取更可读的提示
@@ -290,36 +404,45 @@ const roadmapCount = (await getCollection('roadmaps')).length;
       currentStream = res.body.getReader();
       const decoder = new TextDecoder();
       let buf = '';
-      let event = 'message';
 
+      // 标准 SSE 解析：事件块之间以空行分隔，buffer 末尾可能是半个块，留到下轮
       while (true) {
         const { done, value } = await currentStream.read();
         if (done) break;
         buf += decoder.decode(value, { stream: true });
-        const lines = buf.split('\n');
-        buf = lines.pop() ?? '';
-        for (const line of lines) {
-          const t = line.trim();
-          if (!t) continue;
-          if (t.startsWith('event:')) {
-            event = t.slice(6).trim();
-          } else if (t.startsWith('data:')) {
-            const payload = t.slice(5).trim();
-            if (event === 'sources') {
-              try { sources = (JSON.parse(payload).sources) || []; hasSources = true; } catch {}
-            } else if (event === 'delta') {
-              if (payload === '[DONE]') continue;
-              try {
-                const c = JSON.parse(payload).choices?.[0]?.delta?.content;
-                if (c) {
-                  answer += c;
-                  bubble.innerHTML = `<div class="answer-text">${escapeHtml(answer)}</div>`;
-                  scrollToBottom();
+        const blocks = buf.split('\n\n');
+        buf = blocks.pop() ?? '';
+        for (const block of blocks) {
+          let event = 'message';
+          const dataLines = [];
+          for (const line of block.split('\n')) {
+            const t = line.trim();
+            if (!t) continue;
+            if (t.startsWith('event:')) event = t.slice(6).trim();
+            else if (t.startsWith('data:')) dataLines.push(t.slice(5).trim());
+          }
+          if (!dataLines.length) continue;
+          const payload = dataLines.join('\n');
+
+          if (event === 'sources') {
+            try { sources = (JSON.parse(payload).sources) || []; hasSources = true; } catch {}
+          } else if (event === 'delta') {
+            if (payload === '[DONE]') continue;
+            try {
+              const c = JSON.parse(payload).choices?.[0]?.delta?.content;
+              if (c) {
+                answer += c;
+                if (!answerStarted) {
+                  // 首个增量：立刻把三圆点替换成正文，避免"停顿感"
+                  answerStarted = true;
+                  flush();
+                } else {
+                  scheduleFlush();
                 }
-              } catch {}
-            } else if (event === 'error') {
-              throw new Error(payload);
-            }
+              }
+            } catch {}
+          } else if (event === 'error') {
+            throw new Error(payload);
           }
         }
       }
@@ -345,9 +468,21 @@ const roadmapCount = (await getCollection('roadmaps')).length;
       attachCopyButton(wrap, answer);
       scrollToBottom();
     } catch (err) {
-      const msg = err && err.message ? err.message : String(err);
-      bubble.innerHTML = `<div class="answer-text chat-error">⚠️ ${escapeHtml(msg)}。</div>`;
+      if (err && err.name === 'AbortError') {
+        // 用户主动停止：保留已生成内容，不算错误
+        if (answer) {
+          history.push({ role: 'assistant', content: answer });
+          bubble.innerHTML = `<div class="answer-text">${renderMarkdown(answer, sources)}</div><p class="chat-stopped">已停止生成</p>`;
+          attachCopyButton(wrap, answer);
+        } else {
+          bubble.innerHTML = '<div class="answer-text chat-stopped">已停止生成。</div>';
+        }
+      } else {
+        const msg = err && err.message ? err.message : String(err);
+        bubble.innerHTML = `<div class="answer-text chat-error">⚠️ ${escapeHtml(msg)}。</div>`;
+      }
     } finally {
+      if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
       setBusy(false);
       inputEl.focus();
     }
@@ -355,6 +490,27 @@ const roadmapCount = (await getCollection('roadmaps')).length;
 
   // ---------- 事件绑定 ----------
   sendBtn.addEventListener('click', send);
+
+  // 代码块复制：事件委托（代码块是流式动态注入的，逐块绑监听会漏）
+  messagesEl.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-copy-code]');
+    if (!btn) return;
+    const code = btn.closest('.md-code-block')?.querySelector('pre code');
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code.textContent || '');
+      btn.textContent = '已复制';
+      btn.classList.add('is-copied');
+      setTimeout(() => {
+        btn.textContent = '复制';
+        btn.classList.remove('is-copied');
+      }, 1500);
+    } catch {
+      btn.textContent = '复制失败';
+      setTimeout(() => { btn.textContent = '复制'; }, 1500);
+    }
+  });
+
   inputEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -366,8 +522,8 @@ const roadmapCount = (await getCollection('roadmaps')).length;
     inputEl.style.height = Math.min(inputEl.scrollHeight, 160) + 'px';
   });
   newBtn?.addEventListener('click', () => {
-    if (busy && currentStream) {
-      try { currentStream.cancel(); } catch {}
+    if (controller) {
+      try { controller.abort(); } catch {}
     }
     setBusy(false);
     currentStream = null;
@@ -594,25 +750,54 @@ const roadmapCount = (await getCollection('roadmaps')).length;
     border: 1px solid rgba(99, 102, 241, 0.2);
   }
   .chat-widget .answer-text pre {
-    margin: 0.7em 0; padding: 12px 14px; border-radius: 10px;
-    background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(148, 163, 184, 0.14);
+    margin: 0; padding: 12px 14px; border-radius: 0 0 10px 10px;
+    background: transparent; border: none;
     overflow-x: auto; line-height: 1.55;
   }
   .chat-widget .answer-text pre code { padding: 0; background: transparent; border: none; color: #dbe4f3; font-size: 0.85em; }
+  /* hljs 自带主题背景，统一交给外层 .md-code-block，避免双层底色 */
+  .chat-widget .answer-text pre code.hljs { background: transparent; padding: 0; }
+
+  /* 代码块容器：顶部语言栏 + 复制按钮 */
+  .chat-widget .md-code-block {
+    margin: 0.7em 0; border-radius: 10px; overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    background: rgba(0, 0, 0, 0.42);
+  }
+  .chat-widget .md-code-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 8px 4px 12px;
+    background: rgba(148, 163, 184, 0.08);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 11px; color: #8b98ad;
+  }
+  .chat-widget .md-code-copy {
+    border: none; background: transparent; color: #8b98ad; cursor: pointer;
+    padding: 2px 7px; border-radius: 5px; font-size: 11px;
+    transition: color 0.15s, background 0.15s;
+  }
+  .chat-widget .md-code-copy:hover { color: #e6edf6; background: rgba(148, 163, 184, 0.14); }
+  .chat-widget .md-code-copy.is-copied { color: #34d399; }
+
   .chat-widget .answer-text blockquote {
     margin: 0.6em 0; padding: 4px 12px;
     border-left: 3px solid #6366f1; color: #a3b1c6;
     background: rgba(99, 102, 241, 0.06); border-radius: 0 8px 8px 0;
   }
+  /* 表格：外层滚动容器，窄屏不撑破气泡 */
+  .chat-widget .md-table-wrap { margin: 0.7em 0; max-width: 100%; overflow-x: auto; }
   .chat-widget .answer-text table {
-    margin: 0.7em 0; border-collapse: collapse; font-size: 0.85em;
-    display: block; overflow-x: auto; max-width: 100%;
+    margin: 0; border-collapse: collapse; font-size: 0.85em; min-width: 100%;
   }
   .chat-widget .answer-text th, .chat-widget .answer-text td {
     border: 1px solid rgba(148, 163, 184, 0.22); padding: 6px 10px; text-align: left;
   }
   .chat-widget .answer-text th { background: rgba(99, 102, 241, 0.14); color: #fff; font-weight: 600; }
   .chat-widget .answer-text hr { border: none; border-top: 1px solid rgba(148, 163, 184, 0.16); margin: 0.8em 0; }
+
+  /* 主动停止提示 */
+  .chat-widget .chat-stopped { margin: 6px 0 0; font-size: 12px; color: #8b98ad; }
 
   /* 引用徽标 */
   .chat-widget .ref-badge {

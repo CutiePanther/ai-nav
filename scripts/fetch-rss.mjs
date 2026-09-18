@@ -18,6 +18,12 @@ import crypto from 'node:crypto';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const INFO_DIR = path.resolve(__dirname, '../src/content/info');
 
+// 分类白名单：必须与 src/content.config.ts 的 info schema enum 严格一致。
+// 越界的分类会导致 Astro 内容校验抛 InvalidContentEntryDataError，从而阻断整次构建
+// （prebuild 阶段就失败，线上部署直接中断）。这里做前置拦截，把「构建失败」降级为「跳过该条 + 告警」。
+// 改动任一处的枚举时，两处必须同步。
+const ALLOWED_CATEGORIES = new Set(['行业快讯', '技术前沿', '开源动态', '政策产业']);
+
 // RSS 源配置：url + 来源名 + 分类
 const SOURCES = [
   {
@@ -42,7 +48,9 @@ const SOURCES = [
   {
     url: 'https://www.jiqizhixin.com/rss',
     source: '机器之心',
-    category: '技术深度',
+    // 原为「技术深度」，不在 info schema 的枚举内（会导致内容校验失败、构建中断）。
+    // 机器之心以技术解读为主，归入「技术前沿」语义最接近。
+    category: '技术前沿',
     max: 6,
   },
   {
@@ -152,12 +160,24 @@ function frontmatterOf({ title, source, url, summary, category, date, body }) {
   return fm.join('\n');
 }
 
-// 统一持久化：标题去重 + 写文件，返回新增条数
+// 统一持久化：分类白名单校验 + 标题去重 + 写文件，返回新增条数
 async function persist(items, existing) {
   let added = 0;
   for (const item of items) {
     const title = (item.title ?? '').trim();
     if (!title || existing.has(title)) continue;
+
+    // 分类越界 → 跳过并告警，不写盘。
+    // 若放任写入，Astro 内容校验会抛 InvalidContentEntryDataError 使整次构建失败，
+    // 为一条脏数据牺牲整个站点不值得。
+    if (!ALLOWED_CATEGORIES.has(item.category)) {
+      console.warn(
+        `[rss] 跳过「${title}」：分类 "${item.category}" 不在 schema 白名单内` +
+          `（${[...ALLOWED_CATEGORIES].join(' / ')}）。请修正 SOURCES 配置。`,
+      );
+      continue;
+    }
+
     await writeFile(path.join(INFO_DIR, filenameFor(title, item.date)), frontmatterOf(item), 'utf-8');
     existing.add(title);
     added++;
@@ -165,7 +185,22 @@ async function persist(items, existing) {
   return added;
 }
 
+// 启动自检：SOURCES 里若配了越界分类，立即报错。
+// 这种错误若留到运行时才逐条触发，会被各源抓取失败日志淹没，很难定位。
+function assertSourceCategories() {
+  const bad = SOURCES.filter((s) => !ALLOWED_CATEGORIES.has(s.category));
+  if (bad.length === 0) return;
+  for (const s of bad) {
+    console.error(`[rss] ✗ 源「${s.source}」分类 "${s.category}" 不在 schema 白名单内`);
+  }
+  throw new Error(
+    `SOURCES 中存在 ${bad.length} 个越界分类，与 src/content.config.ts 的 info schema 不一致。` +
+      `合法值：${[...ALLOWED_CATEGORIES].join(' / ')}`,
+  );
+}
+
 async function main() {
+  assertSourceCategories();
   const existing = await loadExistingTitles();
   let added = 0;
 

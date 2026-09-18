@@ -13,7 +13,13 @@ id = "ad191bb336314f439eb3b71a5a92edde"
 ALLOWED_ORIGIN = "https://ai-nav-flax.vercel.app"
 # 每 IP 每分钟限流。默认 10 对连续追问偏紧（触发后整个 60s 窗口全拒，体感是「一直 429」），
 # 个人站点放宽到 30，既能挡住滥用也不误伤正常使用。
+# 注意：仅在未绑定 RATE_LIMITER（见文末）时生效，绑定后以平台的 limit 为准。
 RATE_LIMIT_PER_MIN = "30"
+# 部署环境标识。设为 "production" 后不再放行 http://localhost:* 来源。
+# 默认不设＝保留 localhost 放行（便于本地联调；且浏览器无法伪造 Origin，
+# 公开站点无法伪装成 localhost，风险有限）。如需收紧请取消下行注释。
+# 代价：`wrangler dev` 默认也会读到这里的 vars，届时本地调试会被自己的 CORS 拦掉。
+# ENV = "production"
 # DeepSeek 不提供 /embeddings 接口，向量检索无法使用，退化为 BM25-only。
 # 若不设此项，embedEnv 会回退到 OPENAI_BASE_URL 并每次发一个注定 404 的请求，
 # 还会白读十几 MB 的向量数据。
@@ -28,3 +34,29 @@ THINKING = "disabled"
 #       未设 EMBEDDING_* 时自动回退 OPENAI_*
 # 可选调参：TOP_K（检索条数，默认 5）、CONTEXT_CHUNK_LEN（每来源上下文截取字符，默认 900）、
 #       MAX_TURNS（携带的多轮历史轮数，默认 6）、RATE_LIMIT_PER_MIN（每 IP 每分钟限次，默认 10）
+
+# ---------------------------------------------------------------------------
+# 跨 isolate 限流（推荐启用）
+# ---------------------------------------------------------------------------
+# 背景：src/index.ts 里的进程内 Map 限流**不跨 isolate 共享**，Workers 并发扩容后
+# 实际放行量 ≈ isolate 数 × RATE_LIMIT_PER_MIN，只能算第一道粗筛。
+#
+# 启用下面这段即切换到 Workers Rate Limiting API（与 WAF 限流同一套滑动窗口实现，
+# 计数与 isolate 同机、无额外网络延迟）；绑定存在时 index.ts 会自动优先使用它。
+# 前置条件与限制：
+#   1. 需要 Wrangler ≥ 4.36.0。package.json 的 ^4.10.0 会解析到最新 4.x（本机实测 4.131.1），
+#      已满足，无需额外升级；
+#   2. namespace_id 为账号内唯一的正整数（1–65535），用于区分不同限流配置；
+#   3. period 只能是 10 或 60 秒；
+#   4. 计数**按 Cloudflare 数据中心（colo）各自独立**，不是全球一致——
+#      同一 IP 分布到多个 colo 时总额度会被放大。如需全站硬额度，
+#      应在 LLM 网关侧按 API key 计量，那才是唯一权威口径。
+#   5. limit() 的 key 官方建议用用户/租户 ID 而非 IP（移动网络与代理会多用户共享 IP）。
+#      本站是匿名问答、无登录态，只能用 IP 作为 key——这是当前架构下的合理取舍。
+#
+# [[ratelimits]]
+# name = "RATE_LIMITER"
+# namespace_id = "1001"
+# [ratelimits.simple]
+# limit = 30
+# period = 60

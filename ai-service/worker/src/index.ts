@@ -16,12 +16,24 @@ export interface Env extends KVEnv {
   EMBEDDING_DISABLED?: string;
   /** DeepSeek 系：'disabled' 关闭思考模式。默认不传该参数，保持对其他网关的兼容 */
   THINKING?: string;
+  /** 部署环境标识。设为 'production' 时不再放行 localhost 来源（见 resolveOrigin） */
+  ENV?: string;
   ALLOWED_ORIGIN?: string;
   RATE_LIMIT_PER_MIN?: string;
+  /**
+   * 可选的 Workers Rate Limiting 绑定（wrangler.toml 的 [[unsafe.bindings]] / [[ratelimits]]）。
+   * 绑定后由平台按 key 做跨 isolate 计数，是限流的权威来源；未绑定时退化为进程内滑动窗口。
+   */
+  RATE_LIMITER?: RateLimitBinding;
   /** 检索 topK（默认 5）；上下文每来源截取字符数（默认 900）；携带的历史会话轮数上限（默认 6） */
   TOP_K?: string;
   CONTEXT_CHUNK_LEN?: string;
   MAX_TURNS?: string;
+}
+
+/** Workers Rate Limiting API 的绑定形态 */
+interface RateLimitBinding {
+  limit(options: { key: string }): Promise<{ success: boolean }>;
 }
 
 // 结构化观测日志：输出为单行 JSON，便于 Cloudflare 后台按字段筛选/排查
@@ -32,7 +44,14 @@ function log(event: string, fields: Record<string, unknown> = {}) {
   } catch { /* 日志失败不影响业务 */ }
 }
 
-interface ChatMsg { role: 'user' | 'assistant'; content: string }
+/**
+ * 会话消息角色。
+ * - `system` 仅用于内部拼装 upstream 请求（下方 messages 数组的第一条）；
+ * - 来自客户端 body.history 的消息只接受 user/assistant——该限制由历史解析处的
+ *   显式 `role === 'user' || role === 'assistant'` 判断保证，不依赖此联合类型。
+ */
+type ChatRole = 'system' | 'user' | 'assistant';
+interface ChatMsg { role: ChatRole; content: string }
 
 function embedEnv(env: Env): EmbedEnv | null {
   // 显式关闭向量检索。上游不提供 /embeddings 时（如 DeepSeek）用它，
@@ -44,35 +63,109 @@ function embedEnv(env: Env): EmbedEnv | null {
   return { base, key, model: env.EMBEDDING_MODEL || 'qwen3-embedding-4b', prefix: env.EMBEDDING_QUERY_PREFIX || '' };
 }
 
-function corsHeaders(req: Request, env: Env): Record<string, string> {
+/**
+ * 解析请求来源是否被允许，返回需要回显的 Origin；返回 null 表示不放行。
+ *
+ * 与 ai-service（Node/Hono cors）保持同一套语义：
+ *   1. 无 Origin（curl / 同源 / 服务端调用）→ 非 CORS 请求，无需任何 CORS 头；
+ *   2. 命中 ALLOWED_ORIGIN 白名单 → 回显该 Origin；
+ *   3. 本机回环地址任意端口 → 放行（开发便利）。
+ *      安全性说明：浏览器不允许页面伪造 Origin（由页面真实来源决定），
+ *      因此「放行 localhost」只对真在本机跑的页面生效，公开站点无法借此伪装。
+ *      如仍要在线上彻底关掉这条，设置环境变量 ENV=production 即可（见 wrangler.toml）。
+ *   4. 其余来源 → 返回 null，不下发 Access-Control-Allow-Origin。
+ */
+function resolveOrigin(req: Request, env: Env): string | null {
+  const origin = req.headers.get('Origin') || '';
+  if (!origin) return null;
+
   const allowed = (env.ALLOWED_ORIGIN || '')
     .split(',')
-    .map((s) => s.trim())
+    .map((s) => s.trim().replace(/\/+$/, ''))
     .filter(Boolean);
-  const origin = req.headers.get('Origin') || '';
-  const okOrigin =
-    origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1') || allowed.includes(origin);
+  if (allowed.includes(origin)) return origin;
+
+  if (env.ENV !== 'production' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return origin;
+
+  return null;
+}
+
+function corsHeaders(req: Request, env: Env): Record<string, string> {
+  const echoOrigin = resolveOrigin(req, env);
+  const hasOrigin = Boolean(req.headers.get('Origin'));
+
+  // 关键修复：白名单外的来源**不下发** Access-Control-Allow-Origin。
+  // 旧实现回退为 '*'，等于对全网开放——任意第三方站点都能借用户浏览器直接调用本接口，
+  // 既白耗上游 LLM 额度，也绕过了 ALLOWED_ORIGIN 的本意。浏览器此时会因缺少该头拦截响应，
+  // 而请求本身仍被正常处理（与 Node 侧行为一致，便于按日志排查跨域）。
   return {
-    'Access-Control-Allow-Origin': okOrigin ? origin : '*',
+    ...(echoOrigin ? { 'Access-Control-Allow-Origin': echoOrigin } : {}),
+    // 同一 URL 的响应随 Origin 变化，必须声明 Vary，否则 CDN/浏览器缓存可能把
+    // A 站点的响应（含 ACAO）复用给 B 站点。
+    ...(hasOrigin ? { Vary: 'Origin' } : {}),
     'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Max-Age': '86400',
   };
 }
 
-// 简单的进程内滑动窗口限流（按 IP，分钟桶）——边缘单瓦片够用，不够可换 CF Rate Limiting 绑定
+// ---------------------------------------------------------------------------
+// 限流
+// ---------------------------------------------------------------------------
+// ⚠️ 进程内滑动窗口（按 IP，分钟桶）的真实局限：
+//   Workers 会按流量在**多个 isolate** 中并行运行同一份模块代码，模块级 Map 不跨 isolate 共享。
+//   因此实际放行量 ≈ isolate 数 × RATE_LIMIT_PER_MIN——突增流量下隔离实例越多，放行越多，
+//   拦得住脚本小子，拦不住有意的并发压测。
+// 正确做法：绑定 Workers Rate Limiting（wrangler.toml 中启用 RATE_LIMITER 绑定）。
+//   绑定存在时以平台计数为准（在单个数据中心内一致），进程内计数仅作为降级兜底。
+// 说明：Workers 平台未提供跨全球边缘的强一致限流；若需全局限额，应在 LLM 网关侧按 key 计量。
 const buckets = new Map<string, { start: number; count: number }>();
-function rateLimited(req: Request, env: Env): boolean {
-  const limit = Number(env.RATE_LIMIT_PER_MIN || 10);
-  const ip = req.headers.get('CF-Connecting-IP') || req.headers.get('X-Forwarded-For')?.split(',')[0] || 'unknown';
+const BUCKET_SWEEP_AT = 10_000;
+
+function inMemoryLimited(ip: string, limit: number): boolean {
   const now = Date.now();
   const b = buckets.get(ip);
   if (!b || now - b.start > 60_000) {
     buckets.set(ip, { start: now, count: 1 });
+    // 兜底清理：Map 只增不减会在长驻 isolate 中持续吃内存；超过阈值时按插入顺序淘汰一批最旧记录
+    if (buckets.size > BUCKET_SWEEP_AT) {
+      let removed = 0;
+      for (const key of buckets.keys()) {
+        buckets.delete(key);
+        if (++removed >= BUCKET_SWEEP_AT / 2) break;
+      }
+    }
     return false;
   }
   b.count++;
   return b.count > limit;
+}
+
+async function rateLimited(req: Request, env: Env): Promise<boolean> {
+  const limit = Number(env.RATE_LIMIT_PER_MIN || 10);
+  const ip =
+    req.headers.get('CF-Connecting-IP') ||
+    req.headers.get('X-Forwarded-For')?.split(',')[0]?.trim() ||
+    '';
+
+  // 取不到来源标识时**放行**（fail-open），而不是退回一个共享的 "unknown" 桶。
+  // 反例：若用 'unknown' 兜底，所有无 IP 头的请求会共用一个计数器，
+  // 累计到 limit 次后全体用户一起 429——把「限流」变成了「全站拒绝服务」。
+  // 正常情况下 Worker 一定带 CF-Connecting-IP；本地 miniflare 与前置代理场景才可能为空。
+  if (!ip) {
+    log('rate_limit_skipped', { reason: 'no client ip header' });
+    return false;
+  }
+
+  if (env.RATE_LIMITER) {
+    try {
+      const { success } = await env.RATE_LIMITER.limit({ key: ip });
+      return !success;
+    } catch {
+      // 限流组件故障不应阻断正常问答：降级到进程内计数后继续放行判断
+    }
+  }
+  return inMemoryLimited(ip, limit);
 }
 
 const BASE_RULES = [
@@ -113,8 +206,8 @@ async function handleChat(req: Request, env: Env): Promise<Response> {
   const started = Date.now();
   const ip = req.headers.get('CF-Connecting-IP') || 'unknown';
 
-  if (rateLimited(req, env)) {
-    log('rate_limited', { ip });
+  if (await rateLimited(req, env)) {
+    log('rate_limited', { ip, backend: env.RATE_LIMITER ? 'binding' : 'in-memory' });
     return new Response(JSON.stringify({ error: '请求过于频繁，请稍后再试' }), {
       status: 429,
       headers: { 'Content-Type': 'application/json', ...corsHeaders(req, env) },

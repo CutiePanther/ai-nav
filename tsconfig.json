@@ -1,5 +1,13 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"]
+  "exclude": [
+    "dist",
+    "node_modules",
+    "public",
+    // ai-service 是独立部署单元，有自己的 tsconfig.json 与 node_modules（@types/node、tsx 等）。
+    // 若被根 tsconfig 的 **/* 连带收录，astro check 会用根项目的类型环境去解析这些文件，
+    // 报出大量「Cannot find name 'node:fs'」之类的假阳性，把真实的站点类型问题淹没。
+    "ai-service"
+  ]
 }

@@ -1,0 +1,16 @@
+{
+  "errors": 185,
+  "warnings": 0,
+  "updatedAt": "2026-09-18T01:45:34.426Z",
+  "topFiles": {
+    "src/components/ChatWidget.astro": 90,
+    "src/pages/tools.astro": 49,
+    "src/pages/faq.astro": 17,
+    "src/pages/favorites.astro": 15,
+    "src/components/Search.astro": 6,
+    "src/pages/info.astro": 5,
+    "src/components/StudyOverview.astro": 2,
+    "src/layouts/Layout.astro": 1
+  },
+  "note": "astro check 的存量类型错误基线（棘轮）。只允许下降；修掉一批后用 npm run check:types -- --update 下压。"
+}

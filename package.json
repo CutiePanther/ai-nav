@@ -9,7 +9,14 @@
     "dev": "astro dev",
     "fetch-rss": "node scripts/fetch-rss.mjs",
     "import-guides": "node scripts/import-guides.mjs",
+    "check": "astro check",
+    "check:content": "astro sync",
+    "check:types": "node scripts/check-types.mjs",
+    "check:filenames": "node scripts/check-filenames.mjs",
+    "check:index": "node scripts/check-index-freshness.mjs",
     "check:links": "node scripts/check-links.mjs",
+    "verify": "npm run check:content && npm run check:types",
+    "check:all": "npm run verify && npm run check:filenames && npm run check:index && npm run check:links",
     "prebuild": "node scripts/fetch-rss.mjs",
     "build": "astro build",
     "index": "pagefind --site dist",
@@ -32,5 +39,10 @@
   },
   "allowScripts": {
     "esbuild": true
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@types/node": "^26.6.1",
+    "typescript": "^6.0.3"
   }
 }

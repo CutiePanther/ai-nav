@@ -1,23 +1,30 @@
-# 部署到 GitHub Pages（备选方案）
-# 若用 Vercel / Cloudflare Pages，无需此文件，平台直接监听 push 自动构建。
-name: Deploy to GitHub Pages
+# 持续集成：质量门禁
+#
+# 与部署的关系：
+#   本站线上走 Vercel（见 DEPLOY.md 方案 A），Vercel 的构建命令由仓库根部
+#   `vercel.json` 指定为 `npm run verify && npm run build`——门禁在 Vercel 侧同样生效，
+#   校验不过就不会发布。
+#   因此本文件只做 CI 校验，**不再包含 GitHub Pages 的部署 job**：
+#   原来那个 job 对应 DEPLOY.md 的「方案 C」，与线上实际通道不一致，
+#   且仓库未启用 Pages 时它会稳定失败，push 后长期显示红叉，反而掩盖真正的失败。
+name: CI
 
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
+  quality:
+    name: 站点质量门禁
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,17 +33,46 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
 
-  deploy:
-    needs: build
+      # 1) 内容 schema 校验：info / faq / tools / docs / guides / roadmaps 任一 md
+      #    的 frontmatter 超出 src/content.config.ts 的 Zod 约束即失败。
+      #    这条对应一次真实故障：RSS 脚本写入 schema 枚举外的分类
+      #    → Astro 抛 InvalidContentEntryDataError → prebuild 阶段整次构建中断 → 部署失败。
+      #    修好脚本之外再补这道门禁，避免同类问题以别的形式复发。
+      - name: 校验内容 schema
+        run: npm run check:content
+
+      # 2) 站点类型检查（棘轮）：存量债务记录在 scripts/type-baseline.json，
+      #    只允许下降、不允许上升。清偿一批后用
+      #    `npm run check:types -- --update` 下压基线。
+      - name: 站点类型检查（棘轮）
+        run: npm run check:types
+
+  # ai-service 与 Worker 是独立部署单元（各自有 package.json / tsconfig / lockfile），
+  # 必须单独安装依赖后检查。wrangler 打包时只剥离类型、从不做类型校验，
+  # 因此这道检查是 Worker 代码唯一的类型防线。
+  service-quality:
+    name: 服务端类型检查
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 安装 ai-service 依赖
+        working-directory: ai-service
+        run: npm ci
+      - name: ai-service 类型检查
+        working-directory: ai-service
+        run: npm run typecheck
+      - name: 安装 Worker 依赖
+        working-directory: ai-service/worker
+        run: npm ci
+      - name: Worker 类型检查
+        working-directory: ai-service/worker
+        run: npm run typecheck
+      # 打包校验：确认 tsconfig / 入口 / 绑定配置没有把 deploy 路径弄坏。
+      # 用 --no-install 避免 npx 在 CI 上联网拉包，保证行为确定。
+      - name: Worker 打包校验（dry-run，不部署）
+        working-directory: ai-service/worker
+        run: npx --no-install wrangler deploy --dry-run

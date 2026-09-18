@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
     "upload:kv": "node scripts/upload-kv.mjs && wrangler kv bulk put data/bulk.json --namespace-id=ad191bb336314f439eb3b71a5a92edde --remote"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260911.1",
+    "typescript": "^7.0.2",
     "wrangler": "^4.10.0"
   }
 }

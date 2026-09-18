@@ -36,7 +36,9 @@ app.use(
       // 其余来源拒绝：注意这里只是「不加 CORS 头」，请求仍会被正常处理并返回，
       // 但浏览器会因缺少 Access-Control-Allow-Origin 而拦截响应，前端只会看到
       // "Failed to fetch"。排查跨域问题的第一现场就是上面那行日志。
-      return false;
+      // 返回 null（而非 false）：hono 内部判定是 `if (allowOrigin) { set(...) }`，
+      // null 与 false 同为假值、行为完全一致，但只有 null 符合 cors 回调的类型签名。
+      return null;
     },
   }),
 );

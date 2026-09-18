@@ -42,7 +42,16 @@ async function loadVectors(env: KVEnv): Promise<number[][] | null> {
 }
 
 export interface KVEnv {
-  AI_DOCS?: { get(key: string, type?: 'text' | 'json'): Promise<string | null | unknown> };
+  /**
+   * Workers KV 命名空间（存放 index.json / vectors.json）。
+   *
+   * 直接复用 @cloudflare/workers-types 的 KVNamespace，不要手写结构化类型。
+   * 反例（已修正）：写成 `get(key, type?): Promise<string | null | unknown>` 时，
+   * 联合里的 `unknown` 会把 string / null 一并吞并（unknown 是联合的吸收元），
+   * `if (!raw) return null` 之后 raw 收窄成 `{}`，于是 JSON.parse(raw) 报 TS2345，
+   * 等于把这两处读 KV 的类型检查彻底废掉——而它们恰恰决定了索引能否加载。
+   */
+  AI_DOCS?: KVNamespace;
 }
 
 function cosine(a: number[], b: number[]): number {

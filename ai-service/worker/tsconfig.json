@@ -1,0 +1,23 @@
+{
+  // Cloudflare Worker 的类型检查配置。
+  // wrangler 用 esbuild 打包时只「剥离类型」，从不做类型检查——没有这个 tsconfig，
+  // Worker 里的类型错误会一路带到线上（例如 ChatMsg.role 漏了 'system' 这类问题）。
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    // 运行时不提供 DOM：全局类型全部来自 @cloudflare/workers-types
+    // （Request / Response / fetch / URL / TextEncoder 等由它声明）。
+    // 若同时引入 DOM lib，两者对 fetch、Headers 等的声明会互相冲突。
+    "lib": ["ES2022"],
+    "types": ["@cloudflare/workers-types"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src"]
+}

@@ -141,6 +141,16 @@ const roadmapCount = (await getCollection('roadmaps')).length;
   const sendBtn = document.getElementById('chat-send');
   const newBtn = document.getElementById('chat-new');
 
+  // ---------- 主题联动：跟随站点 html.dark 亮/暗，同步设置 data-theme ----------
+  function applyTheme() {
+    const isDark = document.documentElement.classList.contains('dark');
+    root.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  }
+  applyTheme();
+  // 站点主题切换可能改 html 的 class（localStorage 持久化或系统色随动），监听同步
+  const themeObs = new MutationObserver(applyTheme);
+  themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
   let busy = false;
   let currentStream = null;
   // AbortController：真正中止底层 fetch，而不只是停止读取
@@ -1140,6 +1150,135 @@ const roadmapCount = (await getCollection('roadmaps')).length;
     color: #cbd5e1; background: rgba(255, 255, 255, 0.06);
     padding: 1px 6px; border-radius: 4px;
   }
+
+  /* ============ 亮色主题覆盖 ============
+     data-theme 由脚本按站点 html.dark 同步设置；深色为默认（上面已定义），
+     此处仅覆盖亮色取值。[data-theme='light'] 前缀提高特异性，恒优先于基础规则。 */
+  .chat-widget[data-theme='light'][data-mode='floating'] .chat-panel {
+    border-color: rgba(60, 60, 67, 0.14);
+    background: #ffffff;
+    box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.18);
+  }
+  .chat-widget[data-theme='light'] .chat-head-title,
+  .chat-widget[data-theme='light'] .answer-text p,
+  .chat-widget[data-theme='light'] .answer-text li,
+  .chat-widget[data-theme='light'] .msg-user .msg-bubble,
+  .chat-widget[data-theme='light'] .msg-ai .msg-bubble,
+  .chat-widget[data-theme='light'] .chat-textarea,
+  .chat-widget[data-theme='light'] .chat-empty-title,
+  .chat-widget[data-theme='light'] .chat-suggest-title,
+  .chat-widget[data-theme='light'] .src-title { color: #1d1d1f; }
+  .chat-widget[data-theme='light'] .chat-head-sub,
+  .chat-widget[data-theme='light'] .chat-empty-desc,
+  .chat-widget[data-theme='light'] .src-cat { color: #6e6e73; }
+  .chat-widget[data-theme='light'] .msg-copy,
+  .chat-widget[data-theme='light'] .chat-icon-btn,
+  .chat-widget[data-theme='light'] .md-code-bar,
+  .chat-widget[data-theme='light'] .md-code-copy,
+  .chat-widget[data-theme='light'] .thinking-head,
+  .chat-widget[data-theme='light'] .chat-empty,
+  .chat-widget[data-theme='light'] .chat-stopped,
+  .chat-widget[data-theme='light'] .sources-title,
+  .chat-widget[data-theme='light'] .chat-sendhint { color: #6e6e73; }
+  .chat-widget[data-theme='light'] .chat-icon-btn:hover,
+  .chat-widget[data-theme='light'] .msg-copy:hover,
+  .chat-widget[data-theme='light'] .md-code-copy:hover { color: #1d1d1f; }
+  .chat-widget[data-theme='light'] .thinking-body,
+  .chat-widget[data-theme='light'] .src-excerpt,
+  .chat-widget[data-theme='light'] .answer-text blockquote { color: #52525b; }
+  .chat-widget[data-theme='light'] .chat-textarea::placeholder { color: #8e8e93; }
+
+  /* heading / 加粗 / 表格头 / 强调 */
+  .chat-widget[data-theme='light'] .answer-text h1,
+  .chat-widget[data-theme='light'] .answer-text h2,
+  .chat-widget[data-theme='light'] .answer-text h3,
+  .chat-widget[data-theme='light'] .answer-text h4,
+  .chat-widget[data-theme='light'] .answer-text strong,
+  .chat-widget[data-theme='light'] .answer-text th { color: #111827; }
+  .chat-widget[data-theme='light'] .answer-text em { color: #3f3f46; }
+
+  /* 消息与链接 */
+  .chat-widget[data-theme='light'] .msg-user .msg-bubble {
+    background: rgba(79, 70, 229, 0.08);
+    border-color: rgba(79, 70, 229, 0.16);
+  }
+  .chat-widget[data-theme='light'] .answer-text a:not(.ref-badge) { color: #4f46e5; }
+  .chat-widget[data-theme='light'] .answer-text a:not(.ref-badge):hover { color: #4338ca; }
+  .chat-widget[data-theme='light'] .ref-badge,
+  .chat-widget[data-theme='light'] .tool-chip {
+    color: #4338ca; background: rgba(79, 70, 229, 0.08);
+    border-color: rgba(79, 70, 229, 0.24);
+  }
+  .chat-widget[data-theme='light'] .ref-badge:hover { background: rgba(79, 70, 229, 0.14); color: #3730a3; }
+
+  /* 分隔线 / 卡片描边统一浅灰 */
+  .chat-widget[data-theme='light'] .chat-head,
+  .chat-widget[data-theme='light'] .thinking-body,
+  .chat-widget[data-theme='light'] .chat-input,
+  .chat-widget[data-theme='light'] .sources { border-color: rgba(60, 60, 67, 0.1); }
+  .chat-widget[data-theme='light'] .thinking-head {
+    background: rgba(60, 60, 67, 0.04); border-color: rgba(60, 60, 67, 0.12);
+  }
+  .chat-widget[data-theme='light'] .thinking-head:hover { color: #3f3f46; }
+
+  /* 来源列表 */
+  .chat-widget[data-theme='light'] .sources li {
+    background: rgba(79, 70, 229, 0.04); border-color: rgba(79, 70, 229, 0.12);
+  }
+  .chat-widget[data-theme='light'] .sources li:hover {
+    background: rgba(79, 70, 229, 0.08); border-color: rgba(79, 70, 229, 0.28);
+  }
+
+  /* 代码块：浅色底 + 深色文字，与站点亮色一致 */
+  .chat-widget[data-theme='light'] .md-code-block {
+    background: #f6f8fa; border-color: rgba(60, 60, 67, 0.12);
+  }
+  .chat-widget[data-theme='light'] .md-code-bar {
+    background: rgba(0, 0, 0, 0.04);
+    border-bottom-color: rgba(60, 60, 67, 0.1);
+    color: #6e6e73;
+  }
+  .chat-widget[data-theme='light'] .answer-text pre code { color: #24292f; }
+
+  /* 输入区 / 建议卡（亮色：白底高亮描边） */
+  .chat-widget[data-theme='light'] .chat-textarea {
+    background: #ffffff; border-color: rgba(60, 60, 67, 0.16);
+  }
+  .chat-widget[data-theme='light'] .chat-textarea:focus {
+    border-color: rgba(79, 70, 229, 0.5);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+  }
+  .chat-widget[data-theme='light'] .chat-input { background: rgba(60, 60, 67, 0.03); }
+  .chat-widget[data-theme='light'] .chat-suggest-card {
+    background: #ffffff; border-color: rgba(60, 60, 67, 0.12);
+  }
+  .chat-widget[data-theme='light'] .chat-suggest-card:hover {
+    border-color: rgba(79, 70, 229, 0.35); background: rgba(79, 70, 229, 0.05);
+  }
+
+  /* 状态色（亮色下加深对比） */
+  .chat-widget[data-theme='light'] .msg-copy.is-copied,
+  .chat-widget[data-theme='light'] .md-code-copy.is-copied { color: #16a34a; }
+  .chat-widget[data-theme='light'] .chat-error { color: #dc2626; }
+  .chat-widget[data-theme='light'] .tool-chip.is-done { color: #16a34a; }
+  .chat-widget[data-theme='light'] .chat-error code { color: #3f3f46; }
+
+  /* 亮色代码高亮调色板（GitHub Light 风格） */
+  .chat-widget[data-theme='light'] .answer-text pre code .hljs-keyword,
+  .chat-widget[data-theme='light'] .answer-text pre code .hljs-selector-tag,
+  .chat-widget[data-theme='light'] .answer-text pre code .hljs-meta .hljs-keyword { color: #cf222e; }
+  .chat-widget[data-theme='light'] .answer-text pre code .hljs-string,
+  .chat-widget[data-theme='light'] .answer-text pre code .hljs-regexp { color: #0a3069; }
+  .chat-widget[data-theme='light'] .answer-text pre code .hljs-number,
+  .chat-widget[data-theme='light'] .answer-text pre code .hljs-literal,
+  .chat-widget[data-theme='light'] .answer-text pre code .hljs-built_in { color: #0550ae; }
+  .chat-widget[data-theme='light'] .answer-text pre code .hljs-comment,
+  .chat-widget[data-theme='light'] .answer-text pre code .hljs-quote { color: #6e7781; font-style: italic; }
+  .chat-widget[data-theme='light'] .answer-text pre code .hljs-title,
+  .chat-widget[data-theme='light'] .answer-text pre code .hljs-title.function_,
+  .chat-widget[data-theme='light'] .answer-text pre code .hljs-attr { color: #8250df; }
+  .chat-widget[data-theme='light'] .answer-text pre code .hljs-type,
+  .chat-widget[data-theme='light'] .answer-text pre code .hljs-class .hljs-title { color: #953800; }
 
   /* ============ 移动端适配 ============ */
   @media (max-width: 640px) {
